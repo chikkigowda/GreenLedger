@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GreenLedger — Foundation Book Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-deep: #1a3a2a;
+    --green-mid: #2d6a4f;
+    --green-light: #52b788;
+    --green-pale: #d8f3dc;
+    --amber: #f4a261;
+    --amber-light: #fff3e0;
+    --cream: #faf7f2;
+    --ink: #1a1a2e;
+    --ink-soft: #4a4a6a;
+    --white: #ffffff;
+    --border: #e8e4dc;
+    --shadow: 0 4px 24px rgba(26,58,42,0.10);
+    --shadow-lg: 0 8px 40px rgba(26,58,42,0.16);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* LOGIN */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--green-deep) 0%, var(--green-mid) 60%, var(--green-light) 100%);
+    padding: 24px;
+  }
+
+  .login-card {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .login-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .login-logo .leaf {
+    width: 44px; height: 44px;
+    background: var(--green-pale);
+    border-radius: 50% 10px 50% 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+
+  .login-logo h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    color: var(--green-deep);
+  }
+
+  .login-sub {
+    color: var(--ink-soft);
+    font-size: 13px;
+    margin-bottom: 36px;
+    font-weight: 300;
+  }
+
+  .field-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .field-input {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--cream);
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 18px;
+  }
+
+  .field-input:focus { border-color: var(--green-light); background: var(--white); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: var(--green-deep);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    letter-spacing: 0.02em;
+  }
+
+  .btn-primary:hover { background: var(--green-mid); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .login-hint {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  .error-msg {
+    background: #fff0f0;
+    border: 1px solid #ffcccc;
+    color: #cc3333;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  /* APP SHELL */
+  #app-screen { display: none; min-height: 100vh; }
+
+  .topbar {
+    background: var(--green-deep);
+    padding: 0 24px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-logo {
+    font-family: 'DM Serif Display', serif;
+    color: var(--white);
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .topbar-logo span { font-size: 20px; }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .admin-badge {
+    background: rgba(255,255,255,0.15);
+    color: var(--white);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .btn-logout {
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.3);
+    color: var(--white);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: background 0.2s;
+  }
+
+  .btn-logout:hover { background: rgba(255,255,255,0.1); }
+
+  /* NAV TABS */
+  .nav-tabs {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    padding: 0 24px;
+    gap: 4px;
+  }
+
+  .nav-tab {
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    cursor: pointer;
+    border-bottom: 2.5px solid transparent;
+    transition: all 0.2s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .nav-tab:hover { color: var(--green-mid); }
+  .nav-tab.active { color: var(--green-deep); border-bottom-color: var(--green-light); font-weight: 600; }
+
+  .main-content { padding: 28px 24px; max-width: 960px; margin: 0 auto; }
+
+  /* DASHBOARD */
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px;
+    color: var(--green-deep);
+    margin-bottom: 6px;
+  }
+
+  .section-sub {
+    color: var(--ink-soft);
+    font-size: 14px;
+    margin-bottom: 24px;
+    font-weight: 300;
+  }
+
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .filter-btn.active, .filter-btn:hover {
+    background: var(--green-deep);
+    color: var(--white);
+    border-color: var(--green-deep);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 22px 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    transition: transform 0.2s;
+  }
+
+  .stat-card:hover { transform: translateY(-2px); }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+
+  .stat-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    color: var(--green-deep);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-unit { font-size: 13px; color: var(--ink-soft); font-weight: 300; }
+
+  .stat-card.amber .stat-value { color: var(--amber); }
+  .stat-card.pending .stat-value { color: #e07b39; }
+
+  /* TABLE */
+  .table-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .table-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .table-title { font-weight: 600; font-size: 15px; color: var(--green-deep); }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    background: var(--cream);
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 14px 16px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--ink);
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8faf9; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .badge-given { background: var(--green-pale); color: var(--green-deep); }
+  .badge-pending { background: var(--amber-light); color: #b85c00; }
+
+  .source-tag {
+    background: #eef2ff;
+    color: #3730a3;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .btn-toggle {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    color: var(--ink-soft);
+  }
+
+  .btn-toggle:hover { background: var(--green-pale); border-color: var(--green-light); color: var(--green-deep); }
+
+  /* ENTRY FORM */
+  .form-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    padding: 32px;
+    max-width: 620px;
+  }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 580px) { .form-grid { grid-template-columns: 1fr; } }
+
+  .form-group { display: flex; flex-direction: column; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  .field-select {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--cream);
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .field-select:focus { border-color: var(--green-light); background: var(--white); }
+
+  .calc-preview {
+    background: var(--green-pale);
+    border: 1.5px solid var(--green-light);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 4px;
+  }
+
+  .calc-icon { font-size: 28px; }
+
+  .calc-text { font-size: 13px; color: var(--green-deep); }
+  .calc-num { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--green-deep); }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+  }
+
+  .btn-secondary {
+    padding: 13px 24px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover { border-color: var(--green-light); color: var(--green-deep); }
+
+  .success-toast {
+    position: fixed;
+    bottom: 28px;
+    right: 24px;
+    background: var(--green-deep);
+    color: var(--white);
+    padding: 14px 22px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 999;
+  }
+
+  .success-toast.show { transform: translateY(0); opacity: 1; }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--ink-soft);
+  }
+
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  @media (max-width: 600px) {
+    .main-content { padding: 20px 16px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .form-card { padding: 24px 18px; }
+    .topbar { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="leaf">📗</div>
+      <h1>GreenLedger</h1>
+    </div>
+    <p class="login-sub">Foundation Book & Paper Collection Tracker</p>
+    <div class="error-msg" id="login-error">Incorrect username or password. Try again.</div>
+    <label class="field-label">Username</label>
+    <input class="field-input" id="username" type="text" placeholder="admin" autocomplete="username">
+    <label class="field-label">Password</label>
+    <input class="field-input" id="password" type="password" placeholder="••••••••" autocomplete="current-password">
+    <button class="btn-primary" onclick="doLogin()">Sign In</button>
+    <p class="login-hint">Demo credentials: admin / foundation2024</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="topbar">
+    <div class="topbar-logo"><span>📗</span> GreenLedger</div>
+    <div class="topbar-right">
+      <span class="admin-badge">Admin</span>
+      <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard', this)">📊 Dashboard</button>
+    <button class="nav-tab" onclick="showPage('entry', this)">➕ New Entry</button>
+    <button class="nav-tab" onclick="showPage('ledger', this)">📋 Ledger</button>
+  </div>
+
+  <div class="main-content">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <h2 class="section-title">Collection Dashboard</h2>
+      <p class="section-sub">Track paper collected and notebooks allocated</p>
+
+      <div class="filter-row">
+        <button class="filter-btn active" onclick="setFilter('dtd', this)">Today</button>
+        <button class="filter-btn" onclick="setFilter('mtd', this)">This Month</button>
+        <button class="filter-btn" onclick="setFilter('ytd', this)">This Year</button>
+        <button class="filter-btn" onclick="setFilter('all', this)">All Time</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Collected</div>
+          <div class="stat-value" id="stat-kg">0</div>
+          <div class="stat-unit">kilograms of paper</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Collections</div>
+          <div class="stat-value" id="stat-entries">0</div>
+          <div class="stat-unit">entries logged</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-label">Notebooks Allocated</div>
+          <div class="stat-value" id="stat-books">0</div>
+          <div class="stat-unit">books total</div>
+        </div>
+        <div class="stat-card pending">
+          <div class="stat-label">Pending Delivery</div>
+          <div class="stat-value" id="stat-pending">0</div>
+          <div class="stat-unit">books to give</div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">Recent Collections</span>
+        </div>
+        <div id="dash-table-body"></div>
+      </div>
+    </div>
+
+    <!-- ENTRY FORM -->
+    <div id="page-entry" class="page">
+      <h2 class="section-title">New Collection Entry</h2>
+      <p class="section-sub">Log paper collected and calculate notebook allocation</p>
+
+      <div class="form-card">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="field-label">Source Type</label>
+            <select class="field-select" id="f-source">
+              <option value="">Select source...</option>
+              <option>Individual</option>
+              <option>Society</option>
+              <option>Organisation</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="field-label">Source Name</label>
+            <input class="field-input" id="f-name" type="text" placeholder="e.g. Sunshine Society" style="margin-bottom:0">
+          </div>
+
+          <div class="form-group">
+            <label class="field-label">Quantity Collected (kg)</label>
+            <input class="field-input" id="f-kg" type="number" min="0" step="0.1" placeholder="e.g. 12.5" oninput="calcBooks()" style="margin-bottom:0">
+          </div>
+
+          <div class="form-group">
+            <label class="field-label">Paper Quality / Notebook Rule</label>
+            <select class="field-select" id="f-quality" onchange="calcBooks()">
+              <option value="2">Standard — 1 book per 2 kg</option>
+              <option value="2.5">Premium — 1 book per 2.5 kg</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="field-label">Collection Date</label>
+            <input class="field-input" id="f-date" type="date" style="margin-bottom:0">
+          </div>
+
+          <div class="form-group full">
+            <label class="field-label">Notebooks to Allocate</label>
+            <div class="calc-preview">
+              <div class="calc-icon">📓</div>
+              <div>
+                <div class="calc-num" id="calc-books">—</div>
+                <div class="calc-text" id="calc-desc">Enter quantity above to calculate</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-primary" style="width:auto; padding: 13px 32px;" onclick="submitEntry()">Save Entry</button>
+          <button class="btn-secondary" onclick="resetForm()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEDGER -->
+    <div id="page-ledger" class="page">
+      <h2 class="section-title">Collection Ledger</h2>
+      <p class="section-sub">All entries — update notebook delivery status here</p>
+
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title" id="ledger-count">All Entries</span>
+        </div>
+        <div id="ledger-table-body"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="success-toast" id="toast">✅ Entry saved successfully!</div>
+
+<script>
+  const USERS = { admin: 'foundation2024' };
+  let entries = JSON.parse(localStorage.getItem('gl_entries') || '[]');
+  let currentFilter = 'dtd';
+
+  function doLogin() {
+    const u = document.getElementById('username').value.trim();
+    const p = document.getElementById('password').value;
+    if (USERS[u] === p) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display = 'block';
+      document.getElementById('login-error').style.display = 'none';
+      setTodayDate();
+      refreshDashboard();
+      refreshLedger();
+    } else {
+      document.getElementById('login-error').style.display = 'block';
+    }
+  }
+
+  function doLogout() {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app-screen').style.display = 'none';
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+  }
+
+  document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+  function showPage(id, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    btn.classList.add('active');
+    if (id === 'dashboard') refreshDashboard();
+    if (id === 'ledger') refreshLedger();
+  }
+
+  function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    refreshDashboard();
+  }
+
+  function filterEntries() {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const monthStr = today.slice(0, 7);
+    const yearStr = today.slice(0, 4);
+    return entries.filter(e => {
+      if (currentFilter === 'dtd') return e.date === today;
+      if (currentFilter === 'mtd') return e.date.startsWith(monthStr);
+      if (currentFilter === 'ytd') return e.date.startsWith(yearStr);
+      return true;
+    });
+  }
+
+  function refreshDashboard() {
+    const filtered = filterEntries();
+    const totalKg = filtered.reduce((s, e) => s + e.kg, 0);
+    const totalBooks = filtered.reduce((s, e) => s + e.books, 0);
+    const pendingBooks = filtered.filter(e => e.status === 'Pending').reduce((s, e) => s + e.books, 0);
+
+    document.getElementById('stat-kg').textContent = totalKg % 1 === 0 ? totalKg : totalKg.toFixed(1);
+    document.getElementById('stat-entries').textContent = filtered.length;
+    document.getElementById('stat-books').textContent = totalBooks;
+    document.getElementById('stat-pending').textContent = pendingBooks;
+
+    const recent = [...filtered].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+    const body = document.getElementById('dash-table-body');
+
+    if (recent.length === 0) {
+      body.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No entries for this period</p></div>`;
+      return;
+    }
+
+    body.innerHTML = `<table>
+      <thead><tr>
+        <th>Date</th><th>Source</th><th>Name</th><th>Qty (kg)</th><th>Notebooks</th><th>Status</th>
+      </tr></thead>
+      <tbody>${recent.map(e => `<tr>
+        <td>${formatDate(e.date)}</td>
+        <td><span class="source-tag">${e.source}</span></td>
+        <td>${e.name}</td>
+        <td><strong>${e.kg}</strong></td>
+        <td>📓 ${e.books}</td>
+        <td><span class="badge ${e.status === 'Given' ? 'badge-given' : 'badge-pending'}">${e.status === 'Given' ? '✅' : '⏳'} ${e.status}</span></td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  function refreshLedger() {
+    const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date));
+    document.getElementById('ledger-count').textContent = `${sorted.length} Total Entr${sorted.length === 1 ? 'y' : 'ies'}`;
+    const body = document.getElementById('ledger-table-body');
+
+    if (sorted.length === 0) {
+      body.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>No entries yet — add one from New Entry</p></div>`;
+      return;
+    }
+
+    body.innerHTML = `<table>
+      <thead><tr>
+        <th>Date</th><th>Source</th><th>Name</th><th>Qty (kg)</th><th>Rule</th><th>Notebooks</th><th>Status</th><th>Action</th>
+      </tr></thead>
+      <tbody>${sorted.map((e) => `<tr>
+        <td>${formatDate(e.date)}</td>
+        <td><span class="source-tag">${e.source}</span></td>
+        <td>${e.name}</td>
+        <td>${e.kg}</td>
+        <td style="font-size:12px;color:var(--ink-soft)">${e.rule}kg/book</td>
+        <td>📓 ${e.books}</td>
+        <td><span class="badge ${e.status === 'Given' ? 'badge-given' : 'badge-pending'}">${e.status === 'Given' ? '✅' : '⏳'} ${e.status}</span></td>
+        <td><button class="btn-toggle" onclick="toggleStatus(${entries.indexOf(e)})">${e.status === 'Given' ? 'Mark Pending' : 'Mark Given'}</button></td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  function toggleStatus(idx) {
+    entries[idx].status = entries[idx].status === 'Given' ? 'Pending' : 'Given';
+    saveEntries();
+    refreshLedger();
+    refreshDashboard();
+  }
+
+  function setTodayDate() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('f-date').value = today;
+  }
+
+  function calcBooks() {
+    const kg = parseFloat(document.getElementById('f-kg').value);
+    const rule = parseFloat(document.getElementById('f-quality').value);
+    const el = document.getElementById('calc-books');
+    const desc = document.getElementById('calc-desc');
+    if (!kg || kg <= 0) {
+      el.textContent = '—';
+      desc.textContent = 'Enter quantity above to calculate';
+      return;
+    }
+    const books = Math.floor(kg / rule);
+    el.textContent = books;
+    desc.textContent = `${kg} kg ÷ ${rule} kg/book = ${books} notebook${books !== 1 ? 's' : ''}`;
+  }
+
+  function submitEntry() {
+    const source = document.getElementById('f-source').value;
+    const name = document.getElementById('f-name').value.trim();
+    const kg = parseFloat(document.getElementById('f-kg').value);
+    const rule = parseFloat(document.getElementById('f-quality').value);
+    const date = document.getElementById('f-date').value;
+
+    if (!source || !name || !kg || kg <= 0 || !date) {
+      alert('Please fill in all fields before saving.');
+      return;
+    }
+
+    const books = Math.floor(kg / rule);
+    entries.push({ source, name, kg, rule, books, date, status: 'Pending', id: Date.now() });
+    saveEntries();
+    showToast('✅ Entry saved! ' + books + ' notebook' + (books !== 1 ? 's' : '') + ' allocated.');
+    resetForm();
+    refreshDashboard();
+  }
+
+  function resetForm() {
+    document.getElementById('f-source').value = '';
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-kg').value = '';
+    document.getElementById('f-quality').value = '2';
+    setTodayDate();
+    document.getElementById('calc-books').textContent = '—';
+    document.getElementById('calc-desc').textContent = 'Enter quantity above to calculate';
+  }
+
+  function saveEntries() { localStorage.setItem('gl_entries', JSON.stringify(entries)); }
+
+  function formatDate(d) {
+    const [y, m, day] = d.split('-');
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${parseInt(day)} ${months[parseInt(m)-1]} ${y}`;
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>
