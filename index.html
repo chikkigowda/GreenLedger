@@ -3,467 +3,1732 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GreenLedger — Foundation Book Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<title>YCCP — Climate Capability Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-  :root {
-    --green-deep: #1a3a2a; --green-mid: #2d6a4f; --green-light: #52b788;
-    --green-pale: #d8f3dc; --amber: #f4a261; --amber-light: #fff3e0;
-    --cream: #faf7f2; --ink: #1a1a2e; --ink-soft: #4a4a6a; --white: #ffffff;
-    --border: #e8e4dc; --shadow: 0 4px 24px rgba(26,58,42,0.10);
-    --shadow-lg: 0 8px 40px rgba(26,58,42,0.16); --radius: 16px; --radius-sm: 10px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+:root{
+  --indigo:#4f46e5;--indigo2:#4338ca;--indigo3:#3730a3;--indigobg:rgba(79,70,229,0.08);--indigoborder:rgba(79,70,229,0.2);
+  --orange:#f97316;--orange2:#ea580c;--orangebg:rgba(249,115,22,0.1);--orangeborder:rgba(249,115,22,0.25);
+  --slate:#64748b;--slate2:#94a3b8;--slate3:#cbd5e1;--slate4:#e5e7eb;--slate5:#f3f4f6;--slate6:#f9fafb;
+  --white:#ffffff;--ink:#111827;--ink2:#374151;--ink3:#6b7280;
+  --rose:#e11d48;--rosebg:rgba(225,29,72,0.08);--roseborder:rgba(225,29,72,0.2);
+  --amber:#d97706;--amberbg:rgba(217,119,6,0.1);--amberborder:rgba(217,119,6,0.25);--amber2:#f59e0b;
+  --teal:#0891b2;--tealbg:rgba(8,145,178,0.08);--tealborder:rgba(8,145,178,0.2);
+  --sky:#0284c7;--skybg:rgba(2,132,199,0.08);
+  --emerald:#059669;--emeraldbg:rgba(5,150,105,0.08);--emeraldborder:rgba(5,150,105,0.2);
+  --violet:#7c3aed;--violetbg:rgba(124,58,237,0.08);
+  --navy:#1e1b4b;--navy2:#312e81;--navy3:#3730a3;
+  --r:8px;--rl:12px;--rxl:18px;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg:0 10px 30px rgba(0,0,0,0.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Outfit',sans-serif;background:var(--slate6);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.5;}
 
-  #loading-screen {
-    min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, var(--green-deep) 0%, var(--green-mid) 60%, var(--green-light) 100%);
-    flex-direction: column; gap: 16px;
-  }
-  .loader-logo { font-family: 'DM Serif Display', serif; color: white; font-size: 28px; }
-  .spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loader-text { color: rgba(255,255,255,0.7); font-size: 14px; }
+/* LOADING */
+#loading{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:2000;}
+.load-brand{font-family:'Fraunces',serif;font-size:32px;color:var(--white);}
+.load-brand span{color:var(--amber2);}
+.load-sub{font-size:12px;color:var(--slate2);letter-spacing:0.05em;}
+.spinner{width:32px;height:32px;border:2.5px solid rgba(255,255,255,0.1);border-top-color:var(--amber2);border-radius:50%;animation:spin 0.9s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
 
-  #login-screen {
-    min-height: 100vh; display: none; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, var(--green-deep) 0%, var(--green-mid) 60%, var(--green-light) 100%); padding: 24px;
-  }
-  .login-card { background: var(--white); border-radius: 24px; padding: 48px 40px; width: 100%; max-width: 420px; box-shadow: var(--shadow-lg); }
-  .login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-  .login-logo .leaf { width: 44px; height: 44px; background: var(--green-pale); border-radius: 50% 10px 50% 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-  .login-logo h1 { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--green-deep); }
-  .login-sub { color: var(--ink-soft); font-size: 13px; margin-bottom: 36px; font-weight: 300; }
-  .field-label { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; display: block; }
-  .field-input { width: 100%; padding: 13px 16px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--ink); background: var(--cream); outline: none; transition: border-color 0.2s; margin-bottom: 18px; }
-  .field-input:focus { border-color: var(--green-light); background: var(--white); }
-  .btn-primary { width: 100%; padding: 14px; background: var(--green-deep); color: var(--white); border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.1s; }
-  .btn-primary:hover { background: var(--green-mid); transform: translateY(-1px); }
-  .btn-primary:disabled { background: #aaa; cursor: not-allowed; transform: none; }
-  .error-msg { background: #fff0f0; border: 1px solid #ffcccc; color: #cc3333; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; }
+/* LOGIN */
+#login{position:fixed;inset:0;background:var(--navy);display:none;z-index:1999;}
+#login.show{display:grid;grid-template-columns:1fr 1fr;}
+.login-left{padding:3rem;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(140deg,#1e1b4b 0%,#3730a3 100%);position:relative;overflow:hidden;}
+.login-left::before{content:'';position:absolute;width:500px;height:500px;border-radius:50%;border:1px solid rgba(245,158,11,0.08);top:-150px;right:-150px;}
+.login-left::after{content:'';position:absolute;width:300px;height:300px;border-radius:50%;border:1px solid rgba(245,158,11,0.06);top:-50px;right:-50px;}
+.ll-logo{display:flex;align-items:center;gap:12px;}
+.ll-mark{width:38px;height:38px;background:var(--amber);border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.ll-mark svg{width:20px;height:20px;stroke:var(--navy);fill:none;stroke-width:2.5;}
+.ll-name{font-family:'Fraunces',serif;font-size:22px;color:var(--white);font-weight:600;}
+.ll-hero h1{font-family:'Fraunces',serif;font-size:38px;color:var(--white);line-height:1.15;margin-bottom:14px;}
+.ll-hero h1 em{color:var(--amber2);font-style:italic;}
+.ll-hero p{font-size:14px;color:var(--slate2);line-height:1.75;margin-bottom:20px;}
+.ll-tags{display:flex;flex-wrap:wrap;gap:8px;}
+.ll-tag{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--slate3);font-size:11px;padding:4px 10px;border-radius:20px;}
+.ll-footer{font-size:11px;color:var(--slate3);}
+.login-right{background:var(--white);display:flex;align-items:center;justify-content:center;padding:3rem;}
+.lf-wrap{width:100%;max-width:360px;}
+.lf-wrap h2{font-family:'Fraunces',serif;font-size:26px;margin-bottom:4px;}
+.lf-wrap>p{font-size:13px;color:var(--ink3);margin-bottom:2rem;}
+.field{margin-bottom:1rem;}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--ink2);margin-bottom:5px;letter-spacing:0.06em;text-transform:uppercase;}
+.field input{width:100%;padding:10px 14px;background:var(--slate6);border:1.5px solid var(--slate4);border-radius:var(--r);color:var(--ink);font-family:'Outfit',sans-serif;font-size:14px;outline:none;transition:all 0.2s;}
+.field input:focus{border-color:var(--amber);background:var(--white);box-shadow:0 0 0 3px var(--amberbg);}
+.err-msg{background:var(--rosebg);border:1px solid var(--roseborder);color:var(--rose);padding:9px 12px;border-radius:var(--r);font-size:12px;margin-bottom:1rem;display:none;}
+.btn{padding:9px 18px;border-radius:var(--r);border:1.5px solid var(--slate4);background:var(--white);color:var(--ink2);cursor:pointer;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;}
+.btn:hover{background:var(--slate5);}
+.btn:active{transform:scale(0.98);}
+.btn-amber{background:var(--indigo);color:var(--white);border-color:var(--indigo);font-weight:600;}
+.btn-amber:hover{background:var(--indigo2);border-color:var(--indigo2);}
+.btn-navy{background:var(--indigo3);color:var(--white);border-color:var(--indigo3);}
+.btn-navy:hover{background:var(--indigo2);}
+.btn-teal{background:var(--tealbg);color:var(--teal);border-color:var(--tealborder);}
+.btn-rose{background:var(--rosebg);color:var(--rose);border-color:var(--roseborder);}
+.btn-emerald{background:var(--emeraldbg);color:var(--emerald);border-color:var(--emeraldborder);}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--ink3);}
+.btn-ghost:hover{background:var(--slate5);color:var(--ink);}
+.btn-sm{padding:5px 12px;font-size:12px;}
+.btn-xs{padding:3px 9px;font-size:11px;}
+.btn-block{width:100%;justify-content:center;}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
 
-  #app-screen { display: none; min-height: 100vh; }
-  .topbar { background: var(--green-deep); padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-  .topbar-logo { font-family: 'DM Serif Display', serif; color: var(--white); font-size: 20px; display: flex; align-items: center; gap: 10px; }
-  .topbar-right { display: flex; align-items: center; gap: 12px; }
-  .admin-badge { background: rgba(255,255,255,0.15); color: var(--white); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; }
-  .db-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: rgba(255,255,255,0.8); padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.08); }
-  .db-dot { width: 7px; height: 7px; border-radius: 50%; background: #52b788; animation: pulse 2s infinite; }
-  .db-dot.offline { background: #f4a261; animation: none; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-  .btn-logout { background: transparent; border: 1.5px solid rgba(255,255,255,0.3); color: var(--white); padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.2s; }
-  .btn-logout:hover { background: rgba(255,255,255,0.1); }
+/* APP */
+#app{display:none;min-height:100vh;}
+#app.show{display:grid;grid-template-rows:60px 1fr;grid-template-columns:260px 1fr;}
 
-  .nav-tabs { background: var(--white); border-bottom: 1px solid var(--border); display: flex; padding: 0 24px; gap: 4px; }
-  .nav-tab { padding: 14px 20px; font-size: 14px; font-weight: 500; color: var(--ink-soft); cursor: pointer; border-bottom: 2.5px solid transparent; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; font-family: 'DM Sans', sans-serif; }
-  .nav-tab:hover { color: var(--green-mid); }
-  .nav-tab.active { color: var(--green-deep); border-bottom-color: var(--green-light); font-weight: 600; }
-  .main-content { padding: 28px 24px; max-width: 960px; margin: 0 auto; }
+/* TOPBAR */
+.topbar{grid-column:1/-1;background:var(--indigo3);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;position:sticky;top:0;z-index:100;}
+.tb-brand{display:flex;align-items:center;gap:10px;}
+.tb-mark{width:32px;height:32px;background:var(--amber);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.tb-mark svg{width:17px;height:17px;stroke:var(--navy);fill:none;stroke-width:2.5;}
+.tb-name{font-family:'Fraunces',serif;font-size:18px;color:var(--white);font-weight:600;letter-spacing:-0.3px;}
+.tb-name span{color:var(--amber2);}
+.role-tag{font-size:10px;padding:2px 9px;border-radius:20px;font-weight:600;letter-spacing:0.04em;}
+.rt-master{background:rgba(249,115,22,0.2);color:#fed7aa;border:1px solid rgba(249,115,22,0.4);}
+.rt-edu{background:rgba(8,145,178,0.2);color:#67e8f9;border:1px solid rgba(8,145,178,0.3);}
+.rt-org{background:rgba(79,70,229,0.2);color:#c7d2fe;border:1px solid rgba(79,70,229,0.3);}
+.rt-recycler{background:rgba(8,145,178,0.2);color:#67e8f9;border:1px solid rgba(8,145,178,0.3);}
+.tb-right{display:flex;align-items:center;gap:10px;}
+.tb-user{display:flex;align-items:center;gap:8px;}
+.user-av{width:30px;height:30px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--navy);}
+.user-info .uname{font-size:12px;color:var(--white);font-weight:500;}
+.user-info .urole{font-size:10px;color:var(--slate2);}
+.db-pill{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);padding:4px 10px;border-radius:20px;font-size:11px;color:var(--slate2);}
+.db-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite;}
+.db-dot.off{background:var(--rose);animation:none;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.btn-logout{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--slate3);padding:5px 12px;border-radius:var(--r);font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all 0.15s;}
+.btn-logout:hover{background:rgba(255,255,255,0.12);}
 
-  .section-title { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--green-deep); margin-bottom: 6px; }
-  .section-sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 24px; font-weight: 300; }
-  .filter-row { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
-  .filter-btn { padding: 8px 20px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--white); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--ink-soft); cursor: pointer; transition: all 0.2s; }
-  .filter-btn.active, .filter-btn:hover { background: var(--green-deep); color: var(--white); border-color: var(--green-deep); }
+/* SIDEBAR */
+.sidebar{background:var(--white);border-right:1px solid var(--slate4);overflow-y:auto;padding:1rem 0;}
+.sb-org{margin:0 1rem 1rem;padding:10px 12px;background:var(--slate6);border:1px solid var(--slate4);border-radius:var(--r);}
+.sb-org-name{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-org-year{font-size:11px;color:var(--ink3);}
+.sb-master-sel{padding:0 1rem;margin-bottom:8px;}
+.sb-master-sel select{width:100%;padding:7px 10px;background:var(--slate6);border:1.5px solid var(--slate4);border-radius:var(--r);color:var(--ink);font-family:'Outfit',sans-serif;font-size:12px;outline:none;cursor:pointer;transition:border-color 0.2s;}
+.sb-master-sel select:focus{border-color:var(--amber);}
+.sb-sect{font-size:10px;font-weight:700;color:var(--slate3);letter-spacing:0.1em;text-transform:uppercase;padding:0 1.25rem;margin:1.1rem 0 3px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 1.25rem;font-size:13px;color:var(--ink3);cursor:pointer;border-left:3px solid transparent;transition:all 0.15s;}
+.nav-item:hover{color:var(--ink);background:var(--slate6);}
+.nav-item.active{color:var(--indigo);border-left-color:var(--indigo);background:var(--indigobg);font-weight:600;}
+.nav-item svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.5;flex-shrink:0;}
+.nav-lock{opacity:0.35;pointer-events:none;}
+.nav-pill{margin-left:auto;font-size:10px;padding:1px 7px;border-radius:20px;font-weight:600;background:var(--orangebg);color:var(--orange);}
 
-  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
-  .stat-card { background: var(--white); border-radius: var(--radius); padding: 22px 20px; box-shadow: var(--shadow); border: 1px solid var(--border); transition: transform 0.2s; }
-  .stat-card:hover { transform: translateY(-2px); }
-  .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); margin-bottom: 10px; }
-  .stat-value { font-family: 'DM Serif Display', serif; font-size: 32px; color: var(--green-deep); line-height: 1; margin-bottom: 4px; }
-  .stat-unit { font-size: 13px; color: var(--ink-soft); font-weight: 300; }
-  .stat-card.amber .stat-value { color: var(--amber); }
-  .stat-card.pending .stat-value { color: #e07b39; }
+/* MAIN */
+.main{background:var(--slate6);overflow-y:auto;}
+.page{display:none;padding:1.75rem;}
+.page.active{display:block;}
+.page-hdr{margin-bottom:1.5rem;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+.page-hdr-l h2{font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--ink);margin-bottom:3px;}
+.page-hdr-l p{font-size:13px;color:var(--ink3);}
+.page-hdr-r{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 
-  .table-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
-  .table-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  .table-title { font-weight: 600; font-size: 15px; color: var(--green-deep); }
-  table { width: 100%; border-collapse: collapse; }
-  th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); background: var(--cream); border-bottom: 1px solid var(--border); }
-  td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid var(--border); color: var(--ink); }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: #f8faf9; }
-  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-  .badge-given { background: var(--green-pale); color: var(--green-deep); }
-  .badge-pending { background: var(--amber-light); color: #b85c00; }
-  .source-tag { background: #eef2ff; color: #3730a3; padding: 3px 9px; border-radius: 6px; font-size: 12px; font-weight: 500; }
-  .btn-toggle { padding: 5px 12px; border-radius: 6px; border: 1.5px solid var(--border); background: var(--white); font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; color: var(--ink-soft); }
-  .btn-toggle:hover { background: var(--green-pale); border-color: var(--green-light); color: var(--green-deep); }
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--slate4);border-radius:var(--rl);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow);}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.card-title{font-size:14px;font-weight:600;color:var(--ink);}
+.card-sub{font-size:12px;color:var(--ink3);}
 
-  .form-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); padding: 32px; max-width: 620px; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  @media (max-width: 580px) { .form-grid { grid-template-columns: 1fr; } }
-  .form-group { display: flex; flex-direction: column; }
-  .form-group.full { grid-column: 1 / -1; }
-  .field-select { width: 100%; padding: 13px 16px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--ink); background: var(--cream); outline: none; transition: border-color 0.2s; appearance: none; cursor: pointer; }
-  .field-select:focus { border-color: var(--green-light); background: var(--white); }
-  .calc-preview { background: var(--green-pale); border: 1.5px solid var(--green-light); border-radius: var(--radius-sm); padding: 16px 20px; display: flex; align-items: center; gap: 14px; margin-top: 4px; }
-  .calc-icon { font-size: 28px; }
-  .calc-text { font-size: 13px; color: var(--green-deep); }
-  .calc-num { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--green-deep); }
-  .form-actions { display: flex; gap: 12px; margin-top: 28px; }
-  .btn-secondary { padding: 13px 24px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--white); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink-soft); cursor: pointer; transition: all 0.2s; }
-  .btn-secondary:hover { border-color: var(--green-light); color: var(--green-deep); }
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.25rem;}
+.kpi{background:var(--white);border:1px solid var(--slate4);border-radius:var(--rl);padding:1.1rem 1.25rem;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--rl) var(--rl) 0 0;}
+.kpi.amber::after{background:var(--orange);}
+.kpi.teal::after{background:var(--teal);}
+.kpi.emerald::after{background:var(--emerald);}
+.kpi.sky::after{background:var(--sky);}
+.kpi.violet::after{background:var(--violet);}
+.kpi.rose::after{background:var(--rose);}
+.kpi.orange::after{background:var(--orange);}
+.kpi-label{font-size:11px;color:var(--ink3);margin-bottom:6px;}
+.kpi-val{font-family:'Fraunces',serif;font-size:26px;font-weight:600;line-height:1;color:var(--ink);margin-bottom:3px;}
+.kpi-unit{font-size:11px;color:var(--slate3);}
+.kpi-trend{font-size:11px;margin-top:4px;font-weight:500;}
+.kpi-trend.up{color:var(--emerald);}
+.kpi-trend.down{color:var(--rose);}
 
-  .success-toast { position: fixed; bottom: 28px; right: 24px; background: var(--green-deep); color: var(--white); padding: 14px 22px; border-radius: 12px; font-size: 14px; font-weight: 500; box-shadow: var(--shadow-lg); transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 999; }
-  .success-toast.show { transform: translateY(0); opacity: 1; }
-  .empty-state { text-align: center; padding: 48px 24px; color: var(--ink-soft); }
-  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
-  .empty-state p { font-size: 14px; }
-  .page { display: none; }
-  .page.active { display: block; }
+/* BADGES */
+.badge{display:inline-flex;align-items:center;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;border:1px solid transparent;}
+.badge-teal{background:var(--tealbg);color:var(--teal);border-color:var(--tealborder);}
+.badge-rose{background:var(--rosebg);color:var(--rose);border-color:var(--roseborder);}
+.badge-amber{background:var(--amberbg);color:var(--amber);border-color:var(--amberborder);}
+.badge-emerald{background:var(--emeraldbg);color:var(--emerald);border-color:var(--emeraldborder);}
+.badge-sky{background:var(--skybg);color:var(--sky);}
+.badge-violet{background:var(--violetbg);color:var(--violet);}
+.badge-slate{background:var(--slate5);color:var(--slate);border-color:var(--slate4);}
 
-  @media (max-width: 600px) {
-    .main-content { padding: 20px 16px; }
-    .stats-grid { grid-template-columns: 1fr 1fr; }
-    .form-card { padding: 24px 18px; }
-    .topbar { padding: 0 16px; }
-    .db-status { display: none; }
-  }
+/* TABLES */
+.tbl-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--slate4);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead{background:var(--slate6);}
+th{text-align:left;padding:9px 14px;font-size:10px;font-weight:700;color:var(--ink3);border-bottom:1px solid var(--slate4);letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;}
+td{padding:10px 14px;border-bottom:1px solid var(--slate4);color:var(--ink);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:var(--slate6);}
+
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.form-full{grid-column:1/-1;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg label{font-size:11px;font-weight:600;color:var(--ink2);letter-spacing:0.05em;text-transform:uppercase;}
+.fg label .req{color:var(--rose);}
+.fg input,.fg select,.fg textarea{width:100%;padding:9px 12px;background:var(--slate6);border:1.5px solid var(--slate4);border-radius:var(--r);color:var(--ink);font-family:'Outfit',sans-serif;font-size:13px;outline:none;transition:all 0.2s;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--amber);background:var(--white);box-shadow:0 0 0 3px var(--amberbg);}
+.fg select option{background:var(--white);}
+.fg textarea{resize:vertical;min-height:70px;}
+.fg .hint{font-size:11px;color:var(--ink3);}
+.form-section-title{font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.08em;padding:8px 0 4px;border-bottom:2px solid var(--amberbg);margin-bottom:2px;grid-column:1/-1;}
+
+/* ALERTS */
+.alert{padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:1rem;border:1px solid transparent;display:flex;align-items:flex-start;gap:8px;}
+.alert svg{width:15px;height:15px;flex-shrink:0;margin-top:1px;}
+.alert-info{background:var(--skybg);color:var(--sky);border-color:rgba(2,132,199,0.2);}
+.alert-warn{background:var(--amberbg);color:#92400e;border-color:var(--amberborder);}
+.alert-success{background:var(--emeraldbg);color:var(--emerald);border-color:var(--emeraldborder);}
+.alert-danger{background:var(--rosebg);color:var(--rose);border-color:var(--roseborder);}
+.alert-navy{background:rgba(15,23,41,0.05);color:var(--navy);border-color:rgba(15,23,41,0.15);}
+
+.divider{height:1px;background:var(--slate4);margin:1.25rem 0;}
+.empty{text-align:center;padding:3rem 1rem;color:var(--ink3);font-size:13px;}
+.empty svg{width:36px;height:36px;stroke:var(--slate3);fill:none;stroke-width:1;margin:0 auto 10px;display:block;}
+.lock-banner{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--amberbg);color:#92400e;border:1px solid var(--amberborder);border-radius:var(--r);font-size:13px;margin-bottom:1rem;}
+
+/* PROGRESS */
+.prog-bar{height:6px;background:var(--slate4);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--amber),var(--amber2));border-radius:3px;transition:width 0.5s;}
+.prog-fill.teal{background:linear-gradient(90deg,var(--teal),#2dd4bf);}
+.prog-fill.emerald{background:linear-gradient(90deg,var(--emerald),#34d399);}
+
+/* FILTER ROW */
+.filter-row{display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center;}
+.filter-btn{padding:6px 14px;border-radius:20px;border:1.5px solid var(--slate4);background:var(--white);font-size:12px;font-weight:500;color:var(--ink3);cursor:pointer;transition:all 0.15s;font-family:'Outfit',sans-serif;}
+.filter-btn:hover,.filter-btn.active{background:var(--navy);color:var(--white);border-color:var(--navy);}
+.filter-sel{padding:6px 12px;border:1.5px solid var(--slate4);border-radius:20px;background:var(--white);font-family:'Outfit',sans-serif;font-size:12px;color:var(--ink);outline:none;cursor:pointer;transition:border-color 0.2s;}
+.filter-sel:focus{border-color:var(--amber);}
+
+/* CHARTS */
+.chart-wrap{position:relative;width:100%;}
+.h180{height:180px;} .h220{height:220px;} .h260{height:260px;}
+.chart-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1rem;}
+
+/* SNAP PREVIEW */
+.snap-preview{background:var(--navy);border-radius:var(--rl);padding:2rem;color:var(--white);}
+.sp-logo{font-size:11px;color:var(--amber2);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;}
+.sp-title{font-family:'Fraunces',serif;font-size:22px;font-weight:600;margin-bottom:4px;}
+.sp-org{font-size:14px;color:var(--slate2);}
+.sp-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1.25rem 0;text-align:center;}
+.sp-kpi-val{font-family:'Fraunces',serif;font-size:18px;font-weight:600;}
+.sp-kpi-lbl{font-size:10px;color:var(--slate2);margin-top:2px;}
+.sp-divider{height:1px;background:rgba(255,255,255,0.1);margin:1rem 0;}
+.sp-footer{font-size:10px;color:var(--slate3);text-align:center;}
+
+/* REPORTS PAGE */
+.report-card{background:var(--white);border:1px solid var(--slate4);border-radius:var(--rl);padding:1.5rem;box-shadow:var(--shadow);display:flex;align-items:flex-start;gap:1rem;}
+.rc-icon{width:48px;height:48px;border-radius:var(--rl);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.rc-icon svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.5;}
+.rc-content{flex:1;}
+.rc-title{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+.rc-desc{font-size:12px;color:var(--ink3);margin-bottom:12px;line-height:1.6;}
+.rc-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,41,0.55);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:500;padding:1rem;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--white);border-radius:var(--rxl);padding:2rem;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+.modal.modal-sm{max-width:440px;}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;}
+.modal-hdr h3{font-family:'Fraunces',serif;font-size:20px;font-weight:600;}
+.modal-close{width:30px;height:30px;border-radius:50%;background:var(--slate5);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:18px;line-height:1;}
+.modal-close:hover{background:var(--slate4);}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--slate4);border-radius:var(--rl);padding:1.25rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--slate6);}
+.upload-zone:hover{border-color:var(--amber);background:var(--amberbg);}
+.upload-zone svg{width:28px;height:28px;stroke:var(--slate3);fill:none;stroke-width:1.5;margin:0 auto 6px;display:block;}
+.upload-zone p{font-size:12px;color:var(--ink3);}
+.upload-zone input{display:none;}
+.photo-prev{width:100%;max-height:180px;object-fit:cover;border-radius:var(--r);margin-top:8px;display:none;}
+
+/* CALC PREVIEW */
+.calc-prev{background:linear-gradient(135deg,var(--amberbg),var(--emeraldbg));border:1px solid var(--amberborder);border-radius:var(--rl);padding:14px 16px;margin-top:10px;display:none;}
+.calc-grid{display:flex;gap:20px;flex-wrap:wrap;}
+.calc-item label{font-size:10px;font-weight:600;color:var(--ink3);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.05em;}
+.calc-item .val{font-family:'Fraunces',serif;font-size:18px;font-weight:600;}
+
+/* EF TABLE */
+.ef-neg{color:var(--emerald);font-weight:600;}
+.ef-pos{color:var(--rose);font-weight:600;}
+.ef-na{color:var(--slate3);}
+.ef-editable{cursor:pointer;border-bottom:1px dashed var(--slate3);transition:color 0.15s;}
+.ef-editable:hover{color:var(--amber);}
+
+/* VERIFIER BANNER */
+.verifier-banner{background:linear-gradient(135deg,var(--navy),var(--navy3));border-radius:var(--rl);padding:1.25rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;}
+.vb-left h3{font-family:'Fraunces',serif;font-size:16px;color:var(--white);margin-bottom:4px;}
+.vb-left p{font-size:12px;color:var(--slate2);}
+.vb-link{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:var(--slate3);padding:8px 14px;border-radius:var(--r);font-size:12px;font-family:monospace;flex:1;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:var(--white);padding:12px 18px;border-radius:var(--rl);font-size:13px;box-shadow:var(--shadow-lg);transform:translateY(80px);opacity:0;transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1);z-index:9999;max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+@media(max-width:960px){
+  #login.show{grid-template-columns:1fr;}
+  .login-left{display:none;}
+  #app.show{grid-template-columns:1fr;grid-template-rows:60px 1fr;}
+  .sidebar{display:none;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .form-grid,.form-grid-3{grid-template-columns:1fr;}
+  .chart-grid-2{grid-template-columns:1fr;}
+  .sp-kpis{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
 
-<div id="loading-screen">
-  <div class="loader-logo">📗 GreenLedger</div>
+<div id="loading">
+  <div class="load-brand">YCCP<span>.</span></div>
   <div class="spinner"></div>
-  <div class="loader-text">Connecting to database...</div>
+  <div class="load-sub">Climate Capability Platform · Yujir Planet Competencies</div>
 </div>
 
-<div id="login-screen">
-  <div class="login-card">
-    <div class="login-logo"><div class="leaf">📗</div><h1>GreenLedger</h1></div>
-    <p class="login-sub">Foundation Book & Paper Collection Tracker</p>
-    <div class="error-msg" id="login-error">Incorrect username or password. Try again.</div>
-    <label class="field-label">Username</label>
-    <input class="field-input" id="username" type="text" placeholder="admin" autocomplete="username">
-    <label class="field-label">Password</label>
-    <input class="field-input" id="password" type="password" placeholder="••••••••" autocomplete="current-password">
-    <button class="btn-primary" id="login-btn" onclick="doLogin()">Sign In</button>
+<div id="login">
+  <div class="login-left">
+    <div class="ll-logo">
+      <div class="ll-mark"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+      <div class="ll-name">YCCP</div>
+    </div>
+    <div class="ll-hero">
+      <h1>Track materials.<br><em>Prove impact.</em><br>Build trust.</h1>
+      <p>India's purpose-built platform for BRSR-aligned waste intelligence, emissions tracking, and sustainability reporting for every kind of organisation.</p>
+      <div class="ll-tags">
+        <span class="ll-tag">BRSR Aligned</span>
+        <span class="ll-tag">GHG Protocol</span>
+        <span class="ll-tag">MoEFCC CEF 2023</span>
+        <span class="ll-tag">Carbon Credit Ready</span>
+        <span class="ll-tag">DPDP Act 2023</span>
+      </div>
+    </div>
+    <div class="ll-footer">© 2025 Yujir Planet Competencies · Confidential & Proprietary</div>
+  </div>
+  <div class="login-right">
+    <div class="lf-wrap">
+      <h2>Welcome back</h2>
+      <p>Sign in to your YCCP account</p>
+      <div class="err-msg" id="login-err"></div>
+      <div class="field"><label>Email address</label><input type="email" id="l-email" placeholder="you@organisation.in" autocomplete="email"></div>
+      <div class="field">
+        <label>Password</label>
+        <div style="position:relative">
+          <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password" style="padding-right:50px">
+          <button type="button" onclick="togglePass()" id="pass-toggle" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--ink3);font-size:11px;font-family:Outfit,sans-serif;padding:4px 6px">Show</button>
+        </div>
+      </div>
+      <button class="btn btn-amber btn-block" id="login-btn" onclick="doLogin()">Sign in to YCCP</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">
+        <p style="font-size:11px;color:var(--ink3)">Secure · DPDP Act 2023</p>
+        <a href="mailto:shwetham@yujirplanet.com?subject=YCCP Demo Request" style="font-size:11px;color:var(--indigo);font-weight:500;text-decoration:none">Book a demo →</a>
+      </div>
+    </div>
   </div>
 </div>
 
-<div id="app-screen">
+<div id="app">
   <div class="topbar">
-    <div class="topbar-logo"><span>📗</span> GreenLedger</div>
-    <div class="topbar-right">
-      <div class="db-status"><div class="db-dot" id="db-dot"></div><span id="db-label">Live</span></div>
-      <span class="admin-badge" id="admin-name-badge">Admin</span>
-      <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+    <div class="tb-brand">
+      <div class="tb-mark" style="background:rgba(255,255,255,0.15);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;padding:3px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="width:20px;height:20px"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <div class="tb-name">YCC<span style="color:#fbbf24">P</span></div>
+      <span class="role-tag" id="role-tag" style="display:none"></span>
+    </div>
+    <div class="tb-right">
+      <div class="db-pill"><div class="db-dot" id="db-dot"></div><span id="db-lbl">Live</span></div>
+      <div class="tb-user">
+        <div class="user-av" id="user-av">?</div>
+        <div class="user-info">
+          <div class="uname" id="user-name">—</div>
+          <div class="urole" id="user-role-lbl">—</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Sign out</button>
     </div>
   </div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="showPage('dashboard', this)">📊 Dashboard</button>
-    <button class="nav-tab" onclick="showPage('entry', this)">➕ New Entry</button>
-    <button class="nav-tab" onclick="showPage('ledger', this)">📋 Ledger</button>
-  </div>
-  <div class="main-content">
 
-    <div id="page-dashboard" class="page active">
-      <h2 class="section-title">Collection Dashboard</h2>
-      <p class="section-sub">Track paper collected and notebooks allocated</p>
-      <div class="filter-row">
-        <button class="filter-btn active" onclick="setFilter('dtd', this)">Today</button>
-        <button class="filter-btn" onclick="setFilter('mtd', this)">This Month</button>
-        <button class="filter-btn" onclick="setFilter('ytd', this)">This Year</button>
-        <button class="filter-btn" onclick="setFilter('all', this)">All Time</button>
+  <div class="sidebar">
+    <div class="sb-org" id="sb-org" style="display:none">
+      <div class="sb-org-name" id="sb-org-name">—</div>
+      <div class="sb-org-year" id="sb-org-year">—</div>
+    </div>
+    <div class="sb-master-sel" id="sb-master-sel" style="display:none">
+      <select id="org-select" onchange="switchOrg()">
+        <option value="">— All organisations —</option>
+      </select>
+    </div>
+
+    <div class="sb-sect" id="sec-master" style="display:none">Master Admin</div>
+    <div class="nav-item" id="nav-overview" style="display:none" onclick="nav('overview',this)">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>All Organisations
+    </div>
+    <div class="nav-item" id="nav-clients" style="display:none" onclick="nav('clients',this)">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Manage Clients
+    </div>
+    <div class="nav-item" id="nav-recyclers" style="display:none" onclick="nav('recyclers',this)">
+      <svg viewBox="0 0 24 24"><polyline points="1,4 1,10 7,10"/><path d="M3.51 15a9 9 0 1 0 .49-5.09"/></svg>Processors &amp; Recyclers
+    </div>
+
+    <div class="sb-sect">Reporting</div>
+    <div class="nav-item active" onclick="nav('dashboard',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard
+    </div>
+    <div class="nav-item" onclick="nav('entry',this)">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New Material Entry
+    </div>
+    <div class="nav-item" onclick="nav('reports',this)">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Reports &amp; Exports
+    </div>
+    <div class="nav-item" onclick="nav('factors',this)">
+      <svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>Emission Factors
+    </div>
+
+    <div class="sb-sect">ESG Suite</div>
+    <div class="nav-item nav-lock"><svg viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16h14V8z"/></svg>Energy Module<span class="nav-pill">Phase 2</span></div>
+    <div class="nav-item nav-lock"><svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>Water Module<span class="nav-pill">Phase 2</span></div>
+    <div class="nav-item nav-lock"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg>BRSR Full Report<span class="nav-pill">Phase 3</span></div>
+  </div>
+
+  <div class="main">
+
+    <!-- OVERVIEW (Master) -->
+    <div id="p-overview" class="page">
+      <div class="page-hdr">
+        <div class="page-hdr-l"><h2>All Organisations</h2><p>Cumulative view across all accounts</p></div>
+        <div class="page-hdr-r">
+          <select class="filter-sel" id="ov-org-filter" onchange="renderOverview()"><option value="">All organisations</option></select>
+          <button class="filter-btn active" onclick="setOvF('all',this)">All time</button>
+          <button class="filter-btn" onclick="setOvF('ytd',this)">YTD</button>
+          <button class="filter-btn" onclick="setOvF('mtd',this)">MTD</button>
+          <button class="filter-btn" onclick="setOvF('dtd',this)">Today</button>
+        </div>
       </div>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Total Collected</div><div class="stat-value" id="stat-kg">—</div><div class="stat-unit">kilograms of paper</div></div>
-        <div class="stat-card"><div class="stat-label">Collections</div><div class="stat-value" id="stat-entries">—</div><div class="stat-unit">entries logged</div></div>
-        <div class="stat-card amber"><div class="stat-label">Notebooks Allocated</div><div class="stat-value" id="stat-books">—</div><div class="stat-unit">books total</div></div>
-        <div class="stat-card pending"><div class="stat-label">Pending Delivery</div><div class="stat-value" id="stat-pending">—</div><div class="stat-unit">books to give</div></div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi amber"><div class="kpi-label">Active organisations</div><div class="kpi-val" id="ov-orgs">—</div></div>
+        <div class="kpi teal"><div class="kpi-label">Total material tracked</div><div class="kpi-val" id="ov-total">—</div><div class="kpi-unit">kg</div></div>
+        <div class="kpi emerald"><div class="kpi-label">Total CO₂e avoided</div><div class="kpi-val" id="ov-co2">—</div><div class="kpi-unit">kg CO₂e</div></div>
       </div>
-      <div class="table-card">
-        <div class="table-header"><span class="table-title">Recent Collections</span></div>
-        <div id="dash-table-body"><div class="empty-state"><div class="icon">⏳</div><p>Loading data...</p></div></div>
+      <div class="chart-grid-2">
+        <div class="card" style="margin-bottom:0"><div class="card-hdr"><span class="card-title">Material by category (all orgs)</span></div><div class="chart-wrap h220"><canvas id="ov-cat"></canvas></div></div>
+        <div class="card" style="margin-bottom:0"><div class="card-hdr"><span class="card-title">CO₂e avoided by organisation</span></div><div class="chart-wrap h220"><canvas id="ov-org-chart"></canvas></div></div>
       </div>
     </div>
 
-    <div id="page-entry" class="page">
-      <h2 class="section-title">New Collection Entry</h2>
-      <p class="section-sub">Log paper collected and calculate notebook allocation</p>
-      <div class="form-card">
-        <div class="form-grid">
-          <div class="form-group">
-            <label class="field-label">Source Type</label>
-            <select class="field-select" id="f-source">
-              <option value="">Select source...</option>
-              <option>Individual</option>
-              <option>Society</option>
-              <option>Organisation</option>
-            </select>
+    <!-- MANAGE CLIENTS -->
+    <div id="p-clients" class="page">
+      <div class="page-hdr">
+        <div class="page-hdr-l"><h2>Manage Clients</h2><p>All organisations on YCCP</p></div>
+        <div class="page-hdr-r"><button class="btn btn-amber btn-sm" onclick="openClientModal()">+ Add new account</button></div>
+      </div>
+      <div class="card"><div id="clients-tbl"><div class="empty">No accounts yet.</div></div></div>
+    </div>
+
+    <!-- RECYCLERS -->
+    <div id="p-recyclers" class="page">
+      <div class="page-hdr">
+        <div class="page-hdr-l"><h2>Processors &amp; Recyclers</h2><p>Registered material processors and recycling facilities</p></div>
+        <div class="page-hdr-r"><button class="btn btn-amber btn-sm" onclick="openRecyclerModal()">+ Register processor</button></div>
+      </div>
+      <div class="card"><div id="recyclers-tbl"><div class="empty">No processors registered yet.</div></div></div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="p-dashboard" class="page active">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:10px">
+        <div>
+          <h2 style="font-family:'Fraunces',serif;font-size:20px;font-weight:600;color:var(--ink);margin-bottom:2px" id="dg-title">Dashboard</h2>
+          <p style="font-size:12px;color:var(--ink3)" id="dg-sub">Loading...</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="filter-btn active" onclick="setDashF('all',this)">All time</button>
+          <button class="filter-btn" onclick="setDashF('ytd',this)">YTD</button>
+          <button class="filter-btn" onclick="setDashF('mtd',this)">MTD</button>
+          <button class="filter-btn" onclick="setDashF('dtd',this)">Today</button>
+          <button class="btn btn-sm" style="background:var(--indigo);color:var(--white);border-color:var(--indigo);font-weight:600" onclick="nav('entry',document.querySelector('.nav-item[onclick*=entry]'))">+ Add Entry</button>
+          <button class="btn btn-sm" style="background:var(--orange);color:var(--white);border-color:var(--orange);font-weight:600" onclick="nav('reports',document.querySelector('.nav-item[onclick*=reports]'))">⬇ Snapshot</button>
+        </div>
+      </div>
+
+      <div id="dash-alert-banner" style="margin-bottom:12px"></div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px">
+        <div class="card" style="margin-bottom:0;padding:1rem">
+          <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600">Total waste generated</div>
+          <div style="font-family:'Fraunces',serif;font-size:28px;font-weight:600;color:var(--ink);line-height:1;margin-bottom:4px" id="k-total">—</div>
+          <div style="font-size:11px;color:var(--ink3)">kg this period</div>
+        </div>
+        <div class="card" style="margin-bottom:0;padding:1rem;border-top:3px solid var(--indigo)">
+          <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600">Total waste diverted</div>
+          <div style="font-family:'Fraunces',serif;font-size:28px;font-weight:600;color:var(--indigo);line-height:1;margin-bottom:4px" id="k-diverted">—</div>
+          <div style="font-size:11px;color:var(--ink3)">Recycled + Composted</div>
+        </div>
+        <div class="card" style="margin-bottom:0;padding:1rem;border-top:3px solid var(--teal)">
+          <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600">Diversion rate</div>
+          <div style="font-family:'Fraunces',serif;font-size:28px;font-weight:600;color:var(--teal);line-height:1;margin-bottom:4px" id="k-div">—</div>
+          <div style="font-size:11px;color:var(--ink3)">of total material</div>
+        </div>
+        <div class="card" style="margin-bottom:0;padding:1rem;border-top:3px solid var(--emerald)">
+          <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600">CO₂e avoided</div>
+          <div style="font-family:'Fraunces',serif;font-size:28px;font-weight:600;color:var(--emerald);line-height:1;margin-bottom:4px" id="k-co2">—</div>
+          <div style="font-size:11px;color:var(--ink3)">Scope 3 equivalent</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">
+        <div class="card" style="margin-bottom:0;padding:1rem;border-top:3px solid var(--sky)">
+          <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600">💧 Water saved</div>
+          <div style="font-family:'Fraunces',serif;font-size:28px;font-weight:600;color:var(--sky);line-height:1;margin-bottom:4px" id="k-water">—</div>
+          <div style="font-size:11px;color:var(--ink3)">Litres this period</div>
+        </div>
+        <div class="card" style="margin-bottom:0;padding:1rem;border-top:3px solid var(--orange)">
+          <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600">🌳 Trees equivalent</div>
+          <div style="font-family:'Fraunces',serif;font-size:28px;font-weight:600;color:var(--orange);line-height:1;margin-bottom:4px" id="k-trees">—</div>
+          <div style="font-size:11px;color:var(--ink3)">From paper diverted</div>
+        </div>
+        <div class="card" style="margin-bottom:0;padding:1rem;border-top:3px solid var(--violet)">
+          <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600">📋 Total entries</div>
+          <div style="font-family:'Fraunces',serif;font-size:28px;font-weight:600;color:var(--violet);line-height:1;margin-bottom:4px" id="k-count">—</div>
+          <div style="font-size:11px;color:var(--ink3)">Material records logged</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:12px">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-hdr"><span class="card-title">Monthly waste trend</span><span style="font-size:11px;color:var(--ink3)">Diverted vs Landfilled</span></div>
+          <div class="chart-wrap h220"><canvas id="dash-trend"></canvas></div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-hdr"><span class="card-title">Waste by category</span><span style="font-size:11px;color:var(--ink3)">% share</span></div>
+          <div id="dash-cat-bars" style="padding:4px 0"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <div><span class="card-title">Recent waste entries</span><span style="font-size:11px;color:var(--ink3);margin-left:8px" id="dash-count"></span></div>
+          <button class="btn btn-xs btn-ghost" onclick="nav('entry',document.querySelector('.nav-item[onclick*=entry]'))">View all entries →</button>
+        </div>
+        <div id="dash-table"><div class="empty">No entries yet.</div></div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div id="p-reports" class="page">
+      <div class="page-hdr">
+        <div class="page-hdr-l"><h2>Reports &amp; Exports</h2><p>Download, share and verify your sustainability data</p></div>
+      </div>
+
+      <div id="report-lock" class="lock-banner" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Select an organisation to generate reports.
+      </div>
+
+      <div class="verifier-banner" id="verifier-banner">
+        <div class="vb-left">
+          <h3>🔗 Verifier Access Link</h3>
+          <p>Share this read-only link with your auditor or carbon credit verifier.</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div class="vb-link" id="verifier-link">Generate link below</div>
+          <button class="btn btn-sm" style="background:rgba(255,255,255,0.1);color:var(--white);border-color:rgba(255,255,255,0.2)" onclick="genVerifierLink()">Generate</button>
+          <button class="btn btn-sm" style="background:rgba(255,255,255,0.1);color:var(--white);border-color:rgba(255,255,255,0.2)" onclick="copyVerifierLink()">Copy</button>
+        </div>
+      </div>
+
+      <div style="display:grid;gap:14px">
+        <div class="report-card">
+          <div class="rc-icon" style="background:var(--amberbg);color:var(--amber)"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg></div>
+          <div class="rc-content">
+            <div class="rc-title">Annual Sustainability Snapshot (PDF)</div>
+            <div class="rc-desc">Full branded report with waste summary, emissions avoided, co-benefits, and YCCP seal. Ready to attach to your annual report or BRSR disclosure.</div>
+            <div class="rc-actions">
+              <button class="btn btn-amber btn-sm" id="gen-snap-btn" onclick="generateSnapshot()">Generate PDF snapshot</button>
+              <button class="btn btn-sm btn-ghost" id="dl-snap-btn" onclick="downloadPDF()" style="display:none">Download PDF</button>
+              <span class="badge badge-slate" id="snap-status-badge">Draft</span>
+            </div>
+            <div id="snap-done-msg" style="display:none;margin-top:8px"><div class="alert alert-success" style="margin-bottom:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg>Snapshot generated. Reporting year locked.</div></div>
           </div>
-          <div class="form-group">
-            <label class="field-label">Source Name</label>
-            <input class="field-input" id="f-name" type="text" placeholder="e.g. Sunshine Society" style="margin-bottom:0">
-          </div>
-          <div class="form-group">
-            <label class="field-label">Quantity Collected (kg)</label>
-            <input class="field-input" id="f-kg" type="number" min="0" step="0.1" placeholder="e.g. 12.5" oninput="calcBooks()" style="margin-bottom:0">
-          </div>
-          <div class="form-group">
-            <label class="field-label">Paper Quality / Notebook Rule</label>
-            <select class="field-select" id="f-quality" onchange="calcBooks()">
-              <option value="2">Standard — 1 book per 2 kg</option>
-              <option value="2.5">Premium — 1 book per 2.5 kg</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="field-label">Collection Date</label>
-            <input class="field-input" id="f-date" type="date" style="margin-bottom:0">
-          </div>
-          <div class="form-group full">
-            <label class="field-label">Notebooks to Allocate</label>
-            <div class="calc-preview">
-              <div class="calc-icon">📓</div>
-              <div>
-                <div class="calc-num" id="calc-books">—</div>
-                <div class="calc-text" id="calc-desc">Enter quantity above to calculate</div>
-              </div>
+        </div>
+
+        <div class="report-card">
+          <div class="rc-icon" style="background:var(--tealbg);color:var(--teal)"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+          <div class="rc-content">
+            <div class="rc-title">Raw Data Export (CSV / Excel)</div>
+            <div class="rc-desc">All material entries with full details — consignment numbers, categories, weights, treatment methods, emission factors, CO₂e, water saved, trees equivalent, processor, and photo URLs.</div>
+            <div class="rc-actions">
+              <button class="btn btn-teal btn-sm" onclick="exportCSV()">Export CSV</button>
             </div>
           </div>
         </div>
-        <div class="form-actions">
-          <button class="btn-primary" id="save-btn" style="width:auto;padding:13px 32px" onclick="submitEntry()">Save Entry</button>
-          <button class="btn-secondary" onclick="resetForm()">Clear</button>
+
+        <div class="report-card">
+          <div class="rc-icon" style="background:var(--violetbg);color:var(--violet)"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="rc-content">
+            <div class="rc-title">Verification Report (Carbon Credit Ready)</div>
+            <div class="rc-desc">Chain-of-custody report with consignment trail, processor certifications, photo evidence links, emission factors cited. Structured for GHG Protocol, Verra VCS, Gold Standard, or BIS framework.</div>
+            <div class="rc-actions">
+              <button class="btn btn-sm" style="background:var(--violetbg);color:var(--violet);border-color:rgba(124,58,237,0.25)" onclick="exportVerification()">Export Verification Report</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:1rem">
+        <div class="snap-preview">
+          <div class="sp-logo">Yujir Planet Competencies</div>
+          <div class="sp-title">Annual Sustainability Snapshot</div>
+          <div class="sp-org" id="snap-org">Organisation</div>
+          <div style="font-size:11px;color:var(--slate3);margin-top:2px" id="snap-yr">—</div>
+          <div class="sp-divider"></div>
+          <div class="sp-kpis">
+            <div><div class="sp-kpi-val" style="color:var(--amber2)" id="snap-co2">0</div><div class="sp-kpi-lbl">kg CO₂e avoided</div></div>
+            <div><div class="sp-kpi-val" style="color:#38bdf8" id="snap-water">0</div><div class="sp-kpi-lbl">litres water saved</div></div>
+            <div><div class="sp-kpi-val" style="color:#86efac" id="snap-trees">0</div><div class="sp-kpi-lbl">trees equivalent</div></div>
+          </div>
+          <div class="sp-divider"></div>
+          <div class="sp-footer">YCCP Waste Intelligence System · Yujir Planet Competencies<br>GHG Protocol + MoEFCC CEF 2023 · Confidential &amp; Proprietary</div>
         </div>
       </div>
     </div>
 
-    <div id="page-ledger" class="page">
-      <h2 class="section-title">Collection Ledger</h2>
-      <p class="section-sub">All entries — update notebook delivery status here</p>
-      <div class="table-card">
-        <div class="table-header"><span class="table-title" id="ledger-count">All Entries</span></div>
-        <div id="ledger-table-body"><div class="empty-state"><div class="icon">⏳</div><p>Loading data...</p></div></div>
+    <!-- MATERIAL ENTRY -->
+    <div id="p-entry" class="page">
+      <div class="page-hdr">
+        <div class="page-hdr-l"><h2>New Material Entry</h2><p>Log material collected with full traceability</p></div>
+      </div>
+      <div id="entry-lock-banner" class="lock-banner" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Reporting year is locked after snapshot generation.
+      </div>
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Entry details</span>
+          <span class="badge badge-slate" id="consignment-disp">Consignment auto-assigned on save</span>
+        </div>
+        <div class="form-grid">
+          <div class="fg"><label>Waste / material category <span class="req">*</span></label>
+            <select id="e-cat" onchange="calcPreview()">
+              <option value="">Select category first...</option>
+              <option>Paper &amp; Cardboard</option><option>Plastics</option><option>Organic / Food</option>
+              <option>Metal – Aluminium</option><option>Metal – Steel</option><option>Glass</option>
+              <option>E-waste / Electronics</option><option>Sanitary Waste</option><option>Hazardous</option>
+              <option>Mixed / MSW</option><option>Construction &amp; Debris</option>
+              <option>Textile / Fabric</option><option>Rubber</option><option>Wood</option><option>Other</option>
+            </select>
+          </div>
+          <div class="fg"><label>Source <span class="req">*</span></label>
+            <select id="e-source">
+              <option value="">Select source...</option>
+              <optgroup label="Educational">
+                <option>Classroom</option><option>Library</option><option>Laboratory</option>
+                <option>Cafeteria / Canteen</option><option>Hostel / Dormitory</option>
+                <option>Sports Ground</option><option>Administrative Office</option><option>Common Area</option>
+              </optgroup>
+              <optgroup label="Corporate / Industrial">
+                <option>Office Floor</option><option>Manufacturing Unit</option><option>Warehouse</option>
+                <option>Retail Floor</option><option>Data Centre</option><option>Pantry / Kitchen</option>
+                <option>R&amp;D Lab</option><option>Loading Dock</option>
+              </optgroup>
+              <optgroup label="Shared / Other">
+                <option>Event / Conference</option><option>Parking / Outdoor</option>
+                <option>Medical / Clinic</option><option>Residential Colony</option><option>Other</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="fg"><label>Treatment method <span class="req">*</span></label>
+            <select id="e-treat" onchange="calcPreview();toggleLandfill()">
+              <option value="">Select treatment...</option>
+              <option>Recycled</option><option>Composted</option><option>Landfilled</option>
+              <option>Incinerated</option><option>Co-processed</option>
+            </select>
+          </div>
+          <div class="fg"><label>Weight (kg) <span class="req">*</span></label>
+            <input type="number" id="e-weight" min="0.001" step="0.001" placeholder="0.000" oninput="calcPreview()">
+          </div>
+          <div class="fg"><label>Collection date <span class="req">*</span></label>
+            <input type="date" id="e-date">
+          </div>
+          <div class="fg"><label>Processor / Recycler</label>
+            <select id="e-recycler"><option value="">Select processor (optional)...</option></select>
+          </div>
+          <div class="fg form-full"><label>Collector / vendor name</label>
+            <input id="e-vendor" placeholder="Name of collection agency or vendor (optional)">
+          </div>
+        </div>
+
+        <div class="calc-prev" id="calc-prev">
+          <div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Calculated impact preview</div>
+          <div class="calc-grid">
+            <div class="calc-item"><label>CO₂e impact</label><div class="val" id="p-co2" style="color:var(--emerald)">—</div></div>
+            <div class="calc-item"><label>Water saved</label><div class="val" id="p-water" style="color:var(--sky)">—</div></div>
+            <div class="calc-item"><label>Trees equiv.</label><div class="val" id="p-trees" style="color:var(--amber)">—</div></div>
+            <div class="calc-item"><label>Standard</label><div style="font-size:12px;color:var(--ink3);margin-top:4px" id="p-std">—</div></div>
+          </div>
+        </div>
+
+        <div id="landfill-fields" style="display:none;margin-top:12px">
+          <div class="alert alert-warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Landfill disposal requires a mandatory reason and evidence for BRSR compliance.</div>
+          <div class="form-grid">
+            <div class="fg"><label>Reason for landfill <span class="req">*</span></label><input id="e-lf-reason" placeholder="e.g. No certified recycler available for this material"></div>
+            <div class="fg"><label>Evidence / reference</label><input id="e-lf-evidence" placeholder="e.g. Vendor certificate no., gate pass no."></div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="fg" style="margin-bottom:1rem">
+          <label>GPS tagged photo (optional)</label>
+          <div class="upload-zone" onclick="document.getElementById('photo-input').click()" id="upload-zone">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>
+            <p>Click to upload photo · JPG or PNG</p>
+            <p style="font-size:11px;margin-top:3px;color:var(--slate3)">Photo is tagged with consignment number and timestamp</p>
+            <input type="file" id="photo-input" accept="image/*" onchange="handlePhoto(this)">
+          </div>
+          <img id="photo-prev" class="photo-prev">
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-amber btn-sm" id="save-btn" onclick="saveEntry()">Save entry</button>
+          <button class="btn btn-sm btn-ghost" onclick="clearEntry()">Clear form</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">All entries</span><span class="card-sub" id="all-count"></span></div>
+        <div id="all-tbl"><div class="empty">No entries yet.</div></div>
       </div>
     </div>
 
+    <!-- EMISSION FACTORS -->
+    <div id="p-factors" class="page">
+      <div class="page-hdr">
+        <div class="page-hdr-l"><h2>Emission Factors</h2><p>GHG Protocol + MoEFCC CEF 2023 · IPCC 2019 fallback</p></div>
+        <div class="page-hdr-r" id="ef-master-badge" style="display:none"><span class="badge badge-amber">Editable — Master Admin only</span></div>
+      </div>
+      <div class="alert alert-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Unit: t CO₂e per tonne treated · Negative = emissions avoided · <span id="ef-hint">Values are read-only for your role.</span></div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table><thead><tr><th>Category</th><th>Recycled</th><th>Composted</th><th>Landfilled</th><th>Incinerated</th><th>Co-processed</th><th>Source</th></tr></thead>
+          <tbody id="factors-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.main -->
+</div><!-- /#app -->
+
+<!-- MODAL: Client -->
+<div class="modal-overlay" id="modal-client">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3 id="modal-client-title">Add new account</h3>
+      <button class="modal-close" onclick="closeModal('modal-client')">×</button>
+    </div>
+    <div class="alert alert-navy" id="modal-create-note" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>A Firebase login will be created automatically with the email and temporary password you set below.</div>
+    <div class="form-grid">
+      <div class="form-section-title">Role &amp; Identity</div>
+      <div class="fg form-full"><label>Account / organisation type <span class="req">*</span></label>
+        <select id="c-type">
+          <option value="">Select type...</option>
+          <option>Educational Institution</option><option>Corporate Organisation</option>
+          <option>NGO</option><option>Government Body</option><option>Healthcare</option>
+          <option>Hospitality</option><option>Recycler / Processor</option><option>Composter</option><option>Aggregator</option>
+        </select>
+      </div>
+      <div class="fg"><label>Organisation / facility name <span class="req">*</span></label><input id="c-name" placeholder="e.g. Greenfield Academy"></div>
+      <div class="fg"><label>CIN (listed entities)</label><input id="c-cin" placeholder="optional"></div>
+      <div class="fg"><label>Reporting year <span class="req">*</span></label>
+        <select id="c-year"><option>2024-2025</option><option>2025-2026</option><option>2023-2024</option><option>2022-2023</option></select>
+      </div>
+      <div class="form-section-title">Contact &amp; Login</div>
+      <div class="fg"><label>Primary contact email <span class="req">*</span> (login ID)</label><input id="c-email" type="email" placeholder="admin@organisation.in"></div>
+      <div class="fg"><label>Temporary password <span class="req">*</span></label><input id="c-pass" type="password" placeholder="Min 6 characters"><div class="hint">Client should change on first login</div></div>
+      <div class="fg"><label>Primary contact name</label><input id="c-contact" placeholder="Full name"></div>
+      <div class="fg"><label>Contact phone</label><input id="c-phone" placeholder="+91 98765 43210"></div>
+      <div class="form-section-title">Address</div>
+      <div class="fg form-full"><label>Registered office address</label><input id="c-addr" placeholder="Street address"></div>
+      <div class="fg"><label>City <span class="req">*</span></label><input id="c-city" placeholder="e.g. Pune"></div>
+      <div class="fg"><label>State <span class="req">*</span></label>
+        <select id="c-state"><option value="">Select state...</option>
+          <option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option><option>Bihar</option>
+          <option>Chhattisgarh</option><option>Goa</option><option>Gujarat</option><option>Haryana</option>
+          <option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option>
+          <option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option>
+          <option>Mizoram</option><option>Nagaland</option><option>Odisha</option><option>Punjab</option>
+          <option>Rajasthan</option><option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option>
+          <option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option>
+          <option>Delhi</option><option>Jammu &amp; Kashmir</option><option>Ladakh</option><option>Other</option>
+        </select>
+      </div>
+      <div class="fg"><label>Segregation practiced</label><select id="c-seg"><option>Yes</option><option>Partial</option><option>No</option></select></div>
+      <div class="fg"><label>Students / residents (educational)</label><input id="c-students" type="number" placeholder="0"></div>
+    </div>
+    <input type="hidden" id="c-edit-id">
+    <div style="display:flex;gap:8px;margin-top:1.25rem">
+      <button class="btn btn-amber btn-sm" id="save-client-btn" onclick="saveClient()">Save account</button>
+      <button class="btn btn-sm btn-ghost" onclick="closeModal('modal-client')">Cancel</button>
+      <button class="btn btn-rose btn-sm" id="reset-pass-btn" style="display:none;margin-left:auto" onclick="resetPassword()">Send password reset email</button>
+    </div>
   </div>
 </div>
 
-<div class="success-toast" id="toast"></div>
+<!-- MODAL: Recycler -->
+<div class="modal-overlay" id="modal-recycler">
+  <div class="modal modal-sm">
+    <div class="modal-hdr"><h3>Register Processor</h3><button class="modal-close" onclick="closeModal('modal-recycler')">×</button></div>
+    <div class="form-grid">
+      <div class="fg"><label>Facility name <span class="req">*</span></label><input id="r-name" placeholder="e.g. GreenCycle Pvt Ltd"></div>
+      <div class="fg"><label>Processor type <span class="req">*</span></label>
+        <select id="r-type"><option value="">Select...</option><option>Recycler</option><option>Composter</option><option>Co-processor</option><option>Incineration facility</option><option>Landfill operator</option><option>Aggregator</option></select>
+      </div>
+      <div class="fg"><label>Contact email</label><input id="r-email" type="email" placeholder="contact@facility.in"></div>
+      <div class="fg"><label>City</label><input id="r-city" placeholder="e.g. Bengaluru"></div>
+      <div class="fg form-full"><label>Materials accepted</label><input id="r-materials" placeholder="e.g. Paper, Plastics, E-waste, Organic"></div>
+      <div class="fg form-full"><label>Certification / licence no.</label><input id="r-cert" placeholder="Certificate or authorisation number"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:1rem">
+      <button class="btn btn-amber btn-sm" onclick="saveRecycler()">Save processor</button>
+      <button class="btn btn-sm btn-ghost" onclick="closeModal('modal-recycler')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Edit Emission Factor -->
+<div class="modal-overlay" id="modal-ef">
+  <div class="modal modal-sm">
+    <div class="modal-hdr"><h3>Edit emission factor</h3><button class="modal-close" onclick="closeModal('modal-ef')">×</button></div>
+    <div class="alert alert-warn" style="margin-bottom:1rem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Changes apply to new entries only.</div>
+    <div class="fg" style="margin-bottom:1rem"><label id="ef-lbl">—</label><input type="number" id="ef-val" step="0.001"></div>
+    <input type="hidden" id="ef-cat"><input type="hidden" id="ef-treat">
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-amber btn-sm" onclick="saveEF()">Save factor</button>
+      <button class="btn btn-sm btn-ghost" onclick="closeModal('modal-ef')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import {
-    getFirestore, collection, addDoc, doc, updateDoc,
-    query, orderBy, onSnapshot, Timestamp
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, browserSessionPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, doc, setDoc, getDoc, updateDoc, onSnapshot, query, orderBy, where, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // ── Firebase Config ──────────────────────────────
-  const firebaseConfig = {
-    apiKey: "AIzaSyCcNEm1qA6cfnInN_sWr7yUB1PcLWM4mBU",
-    authDomain: "greenledger-907d8.firebaseapp.com",
-    projectId: "greenledger-907d8",
-    storageBucket: "greenledger-907d8.firebasestorage.app",
-    messagingSenderId: "330522331204",
-    appId: "1:330522331204:web:76b97e6f3f103e7b741411"
-  };
+const MASTER = 'shwetham@yujirplanet.com';
+const API_KEY = 'AIzaSyA55UvDQNPLwoiYC6Hxq1h2IJFLYmw-TAA';
 
-  const firebaseApp = initializeApp(firebaseConfig);
-  const db = getFirestore(firebaseApp);
+// ── Bug 4 FIX: Cloudinary config with clear warning if not set ─────────────────
+const CLOUDINARY_CLOUD = 'YOUR_CLOUD_NAME'; // ← Replace with your Cloudinary cloud name
+const CLOUDINARY_PRESET = 'yccp_evidence';  // ← Replace with your unsigned upload preset
+const CLOUDINARY_CONFIGURED = CLOUDINARY_CLOUD !== 'YOUR_CLOUD_NAME';
 
-  // ── Users — add more admins here ─────────────────
-  const USERS = {
-    admin: { password: 'foundation2024', label: 'Admin' }
-  };
+const fbApp = initializeApp({
+  apiKey:API_KEY,authDomain:"yujir-yccp.firebaseapp.com",projectId:"yujir-yccp",
+  storageBucket:"yujir-yccp.firebasestorage.app",messagingSenderId:"634097834756",
+  appId:"1:634097834756:web:8c9335e4ffc80f0774ce51"
+});
+const auth=getAuth(fbApp), db=getFirestore(fbApp);
 
-  let currentUser = null;
-  let allEntries = [];
-  let currentFilter = 'dtd';
-  let unsubscribe = null;
+async function uploadToCloudinary(file){
+  if(!CLOUDINARY_CONFIGURED) throw new Error('Cloudinary not configured — set CLOUDINARY_CLOUD in the source.');
+  const fd=new FormData();
+  fd.append('file',file);
+  fd.append('upload_preset',CLOUDINARY_PRESET);
+  fd.append('folder','yccp');
+  const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,{method:'POST',body:fd});
+  if(!res.ok)throw new Error('Cloudinary upload failed: '+res.status);
+  const data=await res.json();
+  return data.secure_url;
+}
 
-  // ── Boot ─────────────────────────────────────────
-  setTimeout(() => {
-    document.getElementById('loading-screen').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'flex';
-    setTodayDate();
-  }, 1200);
+// ── Emission Factors ──────────────────────────────────────────────────────────
+let EF={
+  'Paper & Cardboard':{Recycled:-0.82,Composted:null,Landfilled:1.06,Incinerated:1.30,'Co-processed':0.40,water:26500,src:'GHG Protocol / IPCC 2019'},
+  'Plastics':{Recycled:-1.54,Composted:null,Landfilled:0.09,Incinerated:2.09,'Co-processed':-0.20,water:0,src:'GHG Protocol'},
+  'Organic / Food':{Recycled:null,Composted:-0.58,Landfilled:0.85,Incinerated:0.50,'Co-processed':null,water:0,src:'IPCC 2019'},
+  'Metal – Aluminium':{Recycled:-9.10,Composted:null,Landfilled:0.03,Incinerated:null,'Co-processed':null,water:0,src:'GHG Protocol / MoEFCC 2023'},
+  'Metal – Steel':{Recycled:-1.50,Composted:null,Landfilled:0.03,Incinerated:null,'Co-processed':null,water:0,src:'GHG Protocol'},
+  'Glass':{Recycled:-0.31,Composted:null,Landfilled:0.003,Incinerated:null,'Co-processed':null,water:0,src:'IPCC defaults'},
+  'E-waste / Electronics':{Recycled:-2.00,Composted:null,Landfilled:0.50,Incinerated:null,'Co-processed':null,water:0,src:'Estimate – formal recycling'},
+  'Sanitary Waste':{Recycled:null,Composted:null,Landfilled:0.30,Incinerated:0.60,'Co-processed':null,water:0,src:'MoEFCC CEF 2023'},
+  'Hazardous':{Recycled:null,Composted:null,Landfilled:0.45,Incinerated:0.80,'Co-processed':null,water:0,src:'MoEFCC CEF 2023'},
+  'Mixed / MSW':{Recycled:-0.30,Composted:null,Landfilled:0.55,Incinerated:0.70,'Co-processed':0.20,water:0,src:'India avg – MoEFCC 2023'},
+  'Construction & Debris':{Recycled:-0.05,Composted:null,Landfilled:0.02,Incinerated:null,'Co-processed':null,water:0,src:'IPCC defaults'},
+  'Textile / Fabric':{Recycled:-3.10,Composted:null,Landfilled:0.34,Incinerated:1.02,'Co-processed':null,water:0,src:'GHG Protocol'},
+  'Rubber':{Recycled:-1.20,Composted:null,Landfilled:0.19,Incinerated:1.50,'Co-processed':null,water:0,src:'GHG Protocol'},
+  'Wood':{Recycled:-0.44,Composted:-0.10,Landfilled:0.23,Incinerated:0.82,'Co-processed':null,water:0,src:'IPCC 2019'},
+  'Other':{Recycled:-0.30,Composted:null,Landfilled:0.30,Incinerated:0.50,'Co-processed':null,water:0,src:'Estimate'}
+};
 
-  // ── Auth ─────────────────────────────────────────
-  window.doLogin = function () {
-    const u = document.getElementById('username').value.trim().toLowerCase();
-    const p = document.getElementById('password').value;
-    if (USERS[u] && USERS[u].password === p) {
-      currentUser = u;
-      document.getElementById('login-error').style.display = 'none';
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('app-screen').style.display = 'block';
-      document.getElementById('admin-name-badge').textContent = USERS[u].label;
-      startLiveSync();
+// ── State ─────────────────────────────────────────────────────────────────────
+let S={
+  user:null,isMaster:false,orgId:null,orgData:null,
+  allOrgs:[],allEntries:{},entries:[],recyclers:[],
+  snapshotLocked:false,pdfData:null,photoFile:null,
+  dashFilter:'all',ovFilter:'all',
+  unsub:null,editClientId:null,verifierLink:null
+};
+let charts={};
+
+function calcEmission(cat,treat,kg){
+  const f=EF[cat];if(!f)return{co2:0,water:0,trees:0,factor:0,src:'—'};
+  const fv=f[treat];if(fv===null||fv===undefined)return{co2:0,water:0,trees:0,factor:0,src:'—'};
+  return{co2:+(Math.abs(fv)*kg).toFixed(4),water:+((f.water||0)*(kg/1000)).toFixed(2),
+    trees:+(cat==='Paper & Cardboard'?kg/41.7:0).toFixed(4),factor:fv,src:f.src||'GHG Protocol'};
+}
+function genCons(){return'YC-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*999999)).padStart(6,'0');}
+function today(){return new Date().toISOString().split('T')[0];}
+function fmt(d){if(!d)return'—';const[y,m,day]=d.split('-');const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return`${parseInt(day)} ${mn[parseInt(m)-1]} ${y}`;}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+const loadTO=setTimeout(()=>{document.getElementById('loading').style.display='none';document.getElementById('login').classList.add('show');},5000);
+
+onAuthStateChanged(auth,async user=>{
+  clearTimeout(loadTO);
+  document.getElementById('loading').style.display='none';
+  if(user){
+    S.user=user;S.isMaster=user.email===MASTER;
+    document.getElementById('login').classList.remove('show');
+    document.getElementById('app').classList.add('show');
+    document.getElementById('user-av').textContent=user.email.substring(0,2).toUpperCase();
+    document.getElementById('user-name').textContent=user.email;
+    setTodayDate();renderFactors();loadRecyclers();
+    if(S.isMaster){setupMaster();await loadAllData();}
+    else{await loadClientOrg(user.email);}
+    loadEFOverrides();
+  } else {
+    if(S.unsub){S.unsub();S.unsub=null;}
+    document.getElementById('app').classList.remove('show');
+    document.getElementById('login').classList.add('show');
+  }
+});
+
+window.togglePass=function(){
+  const i=document.getElementById('l-pass'),b=document.getElementById('pass-toggle');
+  if(i){i.type=i.type==='password'?'text':'password';if(b)b.textContent=i.type==='password'?'Show':'Hide';}
+};
+
+window.doLogin=async function(){
+  const email=document.getElementById('l-email').value.trim(),pass=document.getElementById('l-pass').value;
+  const btn=document.getElementById('login-btn'),err=document.getElementById('login-err');
+  err.style.display='none';btn.disabled=true;btn.textContent='Signing in...';
+  try{
+    await setPersistence(auth,browserSessionPersistence);
+    await signInWithEmailAndPassword(auth,email,pass);
+  }
+  catch(e){
+    err.style.display='block';
+    err.textContent=e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found'
+      ?'Incorrect email or password. Please try again.':e.message;
+  }
+  finally{btn.disabled=false;btn.textContent='Sign in to YCCP';}
+};
+
+document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')window.doLogin();});
+
+window.doLogout=async()=>{
+  S.photoFile=null;S.entries=[];S.orgId=null;S.orgData=null;
+  if(S.unsub){S.unsub();S.unsub=null;}
+  await signOut(auth);
+};
+
+// ── Master Setup ──────────────────────────────────────────────────────────────
+function setupMaster(){
+  ['nav-overview','nav-clients','nav-recyclers'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='flex';});
+  document.getElementById('sec-master').style.display='block';
+  document.getElementById('sb-master-sel').style.display='block';
+  document.getElementById('ef-master-badge').style.display='flex';
+  document.getElementById('ef-hint').textContent='Click any value to edit (Master Admin only).';
+  const rt=document.getElementById('role-tag');rt.style.display='inline';rt.textContent='Master Admin';rt.className='role-tag rt-master';
+  document.getElementById('user-role-lbl').textContent='Super Admin';
+  nav('overview',document.getElementById('nav-overview'));
+}
+
+// ── Client Setup ──────────────────────────────────────────────────────────────
+function setupClient(){
+  ['nav-overview','nav-clients','nav-recyclers','sec-master','sb-master-sel','ef-master-badge'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+  nav('dashboard',document.querySelector('.nav-item[onclick*=dashboard]'));
+}
+
+async function loadAllData(){
+  const snap=await getDocs(collection(db,'organisations'));
+  S.allOrgs=snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderOrgSwitcher();renderOvOrgFilter();renderClients();renderOverview();
+  await Promise.all(S.allOrgs.map(async org=>{
+    const es=await getDocs(query(collection(db,'organisations',org.id,'entries'),orderBy('date','desc')));
+    S.allEntries[org.id]=es.docs.map(d=>({id:d.id,...d.data()}));
+  }));
+  renderOverview();
+}
+
+async function loadClientOrg(email){
+  try{
+    const snap=await getDocs(query(collection(db,'organisations'),where('email','==',email)));
+    if(snap.empty){showToast('⚠ No organisation linked to this account. Contact admin.');return;}
+    const d=snap.docs[0];S.orgId=d.id;S.orgData={id:d.id,...d.data()};
+    const type=S.orgData.type||'';
+    const rt=document.getElementById('role-tag');rt.style.display='inline';rt.textContent=type||'Client';
+    if(type.includes('Recycler')||type.includes('Composter'))rt.className='role-tag rt-recycler';
+    else if(type.includes('Educational'))rt.className='role-tag rt-edu';
+    else rt.className='role-tag rt-org';
+    document.getElementById('user-role-lbl').textContent=S.orgData.name;
+    document.getElementById('sb-org').style.display='block';
+    document.getElementById('sb-org-name').textContent=S.orgData.name;
+    document.getElementById('sb-org-year').textContent='Reporting Year '+S.orgData.year;
+    setupClient();
+    startSync(S.orgId);
+    updateGreeting();
+  }catch(err){
+    console.error('loadClientOrg error:',err);
+    showToast('⚠ Error loading organisation: '+err.message);
+  }
+}
+
+// ── Bug 2 FIX: updateGreeting — null-guarded dg-date ─────────────────────────
+function updateGreeting(){
+  if(!S.orgData)return;
+  const h=new Date().getHours();
+  const name=S.orgData.name.split(' ')[0];
+  const greeting=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+', '+name+' 👋';
+  const titleEl=document.getElementById('dg-title');
+  if(titleEl)titleEl.textContent=greeting;
+  const subEl=document.getElementById('dg-sub');
+  if(subEl)subEl.textContent=S.orgData.name+' · Reporting Year '+S.orgData.year;
+  // Bug 2 fix: dg-date element was removed from HTML — guard against null
+  const dateEl=document.getElementById('dg-date');
+  if(dateEl)dateEl.textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+
+function renderOrgSwitcher(){
+  const sel=document.getElementById('org-select');
+  sel.innerHTML='<option value="">— All organisations —</option>'+S.allOrgs.map(o=>`<option value="${o.id}">${o.name}</option>`).join('');
+}
+function renderOvOrgFilter(){
+  const sel=document.getElementById('ov-org-filter');if(!sel)return;
+  sel.innerHTML='<option value="">All organisations</option>'+S.allOrgs.map(o=>`<option value="${o.id}">${o.name}</option>`).join('');
+}
+
+window.switchOrg=async function(){
+  const id=document.getElementById('org-select').value;
+  if(!id){S.orgId=null;S.orgData=null;document.getElementById('sb-org').style.display='none';return;}
+  const org=S.allOrgs.find(o=>o.id===id);if(!org)return;
+  S.orgId=id;S.orgData=org;
+  document.getElementById('sb-org').style.display='block';
+  document.getElementById('sb-org-name').textContent=org.name;
+  document.getElementById('sb-org-year').textContent='Reporting Year '+org.year;
+  startSync(id);updateGreeting();
+  if(!S.allEntries[id]){
+    const es=await getDocs(query(collection(db,'organisations',id,'entries'),orderBy('date','desc')));
+    S.allEntries[id]=es.docs.map(d=>({id:d.id,...d.data()}));
+  }
+  renderReports();
+};
+
+function startSync(orgId){
+  if(S.unsub){S.unsub();S.unsub=null;}
+  S.snapshotLocked=false;
+  resetSnapUI();
+  const q=query(collection(db,'organisations',orgId,'entries'),orderBy('date','desc'));
+  S.unsub=onSnapshot(q,snap=>{
+    S.entries=snap.docs.map(d=>({id:d.id,...d.data()}));
+    S.allEntries[orgId]=S.entries;
+    setDbStatus(true);
+    renderDashboard();renderEntries();renderReports();
+  },err=>{console.error(err);setDbStatus(false);});
+  getDoc(doc(db,'organisations',orgId,'settings','snapshot')).then(d=>{
+    if(d.exists()&&d.data().locked){
+      S.snapshotLocked=true;
+      document.getElementById('entry-lock-banner').style.display='flex';
+      document.getElementById('snap-status-badge').textContent='LOCKED';
+      document.getElementById('snap-status-badge').className='badge badge-rose';
+      document.getElementById('snap-done-msg').style.display='block';
+      document.getElementById('gen-snap-btn').style.display='none';
+      document.getElementById('dl-snap-btn').style.display='inline-flex';
+    }
+  });
+}
+
+function resetSnapUI(){
+  document.getElementById('entry-lock-banner').style.display='none';
+  document.getElementById('snap-status-badge').textContent='Draft';
+  document.getElementById('snap-status-badge').className='badge badge-amber';
+  document.getElementById('snap-done-msg').style.display='none';
+  document.getElementById('gen-snap-btn').style.display='inline-flex';
+  document.getElementById('dl-snap-btn').style.display='none';
+}
+
+function setDbStatus(on){
+  document.getElementById('db-dot').className='db-dot'+(on?'':' off');
+  document.getElementById('db-lbl').textContent=on?'Live':'Offline';
+}
+
+// ── Overview ──────────────────────────────────────────────────────────────────
+function getOvEntries(){
+  const orgF=document.getElementById('ov-org-filter')?.value||'';
+  let all=[];
+  for(const org of S.allOrgs){
+    if(orgF&&org.id!==orgF)continue;
+    all=all.concat(filtByDate(S.allEntries[org.id]||[],S.ovFilter));
+  }
+  return all;
+}
+
+function filtByDate(entries,filter){
+  const t=today(),m=t.slice(0,7),y=t.slice(0,4);
+  return entries.filter(e=>{
+    if(filter==='dtd')return e.date===t;
+    if(filter==='mtd')return e.date&&e.date.startsWith(m);
+    if(filter==='ytd')return e.date&&e.date.startsWith(y);
+    return true;
+  });
+}
+
+window.renderOverview=function(){
+  const all=getOvEntries();
+  const total=all.reduce((s,e)=>s+Number(e.kg||0),0);
+  const co2=all.reduce((s,e)=>s+Number(e.co2||0),0);
+  document.getElementById('ov-orgs').textContent=S.allOrgs.length;
+  document.getElementById('ov-total').textContent=total.toFixed(1);
+  document.getElementById('ov-co2').textContent=co2.toFixed(2);
+  const catT={};all.forEach(e=>{catT[e.cat]=(catT[e.cat]||0)+Number(e.kg||0);});
+  const catL=Object.keys(catT),catD=catL.map(l=>+catT[l].toFixed(2));
+  const pal=['#f59e0b','#0d9488','#0284c7','#7c3aed','#e11d48','#059669','#ea580c','#6366f1','#ec4899','#14b8a6'];
+  destroyChart('ov-cat');
+  const catEl=document.getElementById('ov-cat');
+  if(catEl&&catL.length)charts['ov-cat']=new Chart(catEl,{type:'doughnut',data:{labels:catL,datasets:[{data:catD,backgroundColor:pal.slice(0,catL.length),borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:10,padding:8}}}}});
+  destroyChart('ov-org-chart');
+  const orgEl=document.getElementById('ov-org-chart');
+  const orgN=S.allOrgs.map(o=>o.name.substring(0,14));
+  const orgCo2=S.allOrgs.map(o=>+filtByDate(S.allEntries[o.id]||[],S.ovFilter).reduce((s,e)=>s+Number(e.co2||0),0).toFixed(2));
+  if(orgEl&&orgN.length)charts['ov-org-chart']=new Chart(orgEl,{type:'bar',data:{labels:orgN,datasets:[{label:'CO₂e avoided (kg)',data:orgCo2,backgroundColor:'rgba(5,150,105,0.75)',borderColor:'#059669',borderWidth:1,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:10}}}}}});
+};
+window.setOvF=function(f,btn){S.ovFilter=f;document.querySelectorAll('#p-overview .filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderOverview();};
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+function renderDashboard(){
+  const e=filtByDate(S.entries,S.dashFilter);
+  const total=e.reduce((s,i)=>s+Number(i.kg||0),0);
+  const co2=e.reduce((s,i)=>s+Number(i.co2||0),0);
+  const water=e.reduce((s,i)=>s+Number(i.water||0),0);
+  const trees=e.reduce((s,i)=>s+Number(i.trees||0),0);
+  const div=e.filter(i=>['Recycled','Composted','Co-processed'].includes(i.treat)).reduce((s,i)=>s+Number(i.kg||0),0);
+  const divPct=total>0?((div/total)*100):0;
+  document.getElementById('k-total').textContent=total>=1000?(total/1000).toFixed(1)+' t':total.toFixed(1)+' kg';
+  document.getElementById('k-diverted').textContent=div>=1000?(div/1000).toFixed(1)+' t':div.toFixed(1)+' kg';
+  document.getElementById('k-div').textContent=divPct.toFixed(1)+'%';
+  document.getElementById('k-co2').textContent=co2>=1000?(co2/1000).toFixed(2)+' t':co2.toFixed(2)+' kg';
+  document.getElementById('k-water').textContent=water>=1000?(water/1000).toFixed(1)+' kL':Math.round(water)+' L';
+  document.getElementById('k-trees').textContent=trees.toFixed(1);
+  document.getElementById('k-count').textContent=e.length;
+
+  // Alert banner
+  const banner=document.getElementById('dash-alert-banner');
+  const uniqueDates=new Set(S.entries.map(i=>i.date)).size;
+  const dailyAvg=total>0&&uniqueDates>0?total/uniqueDates:0;
+  if(dailyAvg>100){
+    banner.innerHTML=`<div style="background:#fef9c3;border:1px solid #ca8a04;border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:13px;color:#92400e">
+      <span style="font-size:16px">⚠</span>
+      <div><strong>Bulk Waste Generator Alert</strong> — Your organisation averages <strong>${dailyAvg.toFixed(0)} kg/day</strong>, exceeding the 100 kg/day threshold under India's SWM Rules 2016. Additional compliance obligations may apply.</div>
+    </div>`;
+  } else { banner.innerHTML=''; }
+
+  // Update sub — Bug 3 FIX: don't overwrite the greeting in dg-title
+  const subEl=document.getElementById('dg-sub');
+  if(subEl&&S.orgData)subEl.textContent=S.orgData.name+' · FY '+S.orgData.year+(S.entries.length>0?' · Updated '+fmt(S.entries[0].date):'');
+
+  // Recent entries table
+  const recent=e.slice(0,5);
+  const dt=document.getElementById('dash-table');
+  document.getElementById('dash-count').textContent='Latest '+Math.min(recent.length,5)+' records';
+
+  // Bug 1 FIX: use template literal instead of single-quoted string
+  if(!recent.length){
+    dt.innerHTML=`<div class="empty">No entries yet. <a href="#" onclick="nav('entry',document.querySelector('.nav-item[onclick*=entry]'))" style="color:var(--indigo)">Add your first entry →</a></div>`;
+  } else {
+    dt.innerHTML='<div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Source</th><th>Category</th><th>Bin type</th><th>Weight</th><th>Treatment</th><th>Vendor</th></tr></thead><tbody>'+
+    recent.map(i=>{
+      const isWet=['Organic / Food'].includes(i.cat);
+      const isHaz=['Hazardous'].includes(i.cat);
+      const binType=isHaz?'<span class="badge" style="background:#fef3c7;color:#92400e;border-color:#d97706">Hazardous</span>':
+        isWet?'<span class="badge" style="background:#dbeafe;color:#1e40af;border-color:#3b82f6">Wet</span>':
+        '<span class="badge" style="background:#f3f4f6;color:#374151;border-color:#d1d5db">Dry</span>';
+      const treatCol={'Recycled':'#059669','Composted':'#0891b2','Landfilled':'#e11d48','Incinerated':'#d97706','Co-processed':'#7c3aed'}[i.treat]||'#6b7280';
+      return`<tr>
+        <td style="font-weight:500">${fmt(i.date)}</td>
+        <td>${i.source||'—'}</td>
+        <td>${i.cat}</td>
+        <td>${binType}</td>
+        <td>${i.kg} kg</td>
+        <td><span class="badge" style="background:${treatCol}20;color:${treatCol};border-color:${treatCol}40">${i.treat}</span></td>
+        <td style="color:var(--ink3);font-size:12px">${i.vendor||'—'}</td>
+      </tr>`;
+    }).join('')+'</tbody></table></div>';
+  }
+
+  // Category bars
+  const catT={};e.forEach(i=>{catT[i.cat]=(catT[i.cat]||0)+Number(i.kg||0);});
+  const catSorted=Object.entries(catT).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const catMax=catSorted.length?catSorted[0][1]:1;
+  const catColors=['#4f46e5','#0891b2','#f97316','#059669','#7c3aed','#e11d48','#d97706'];
+  const catDiv=document.getElementById('dash-cat-bars');
+  if(catDiv){
+    if(!catSorted.length){catDiv.innerHTML='<div class="empty" style="padding:1rem">No data</div>';}
+    else{
+      catDiv.innerHTML=catSorted.map(([cat,kg],i)=>{
+        const pct=total>0?((kg/total)*100).toFixed(0):0;
+        const barW=catMax>0?((kg/catMax)*100).toFixed(0):0;
+        return`<div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+            <span style="color:var(--ink2)">${cat}</span>
+            <span style="font-weight:600;color:var(--ink)">${pct}%</span>
+          </div>
+          <div style="height:6px;background:var(--slate4);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${barW}%;background:${catColors[i]||'#4f46e5'};border-radius:3px;transition:width 0.4s"></div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+  renderDashCharts(e);
+}
+
+window.setDashF=function(f,btn){
+  S.dashFilter=f;
+  document.querySelectorAll('#p-dashboard .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');renderDashboard();
+};
+
+function renderDashCharts(entries){
+  const mDiv={},mLand={};
+  entries.forEach(e=>{
+    const m=e.date?e.date.slice(0,7):'';if(!m)return;
+    if(['Recycled','Composted','Co-processed'].includes(e.treat)){mDiv[m]=(mDiv[m]||0)+Number(e.kg||0);}
+    else{mLand[m]=(mLand[m]||0)+Number(e.kg||0);}
+  });
+  const mKeys=[...new Set([...Object.keys(mDiv),...Object.keys(mLand)])].sort().slice(-12);
+  const mLabels=mKeys.map(k=>{const[,m]=k.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1];});
+  destroyChart('dash-trend');
+  const tEl=document.getElementById('dash-trend');
+  if(tEl)charts['dash-trend']=new Chart(tEl,{type:'bar',
+    data:{labels:mLabels.length?mLabels:['No data'],datasets:[
+      {label:'Diverted',data:mKeys.map(k=>+(mDiv[k]||0).toFixed(1)),backgroundColor:'rgba(79,70,229,0.75)',borderRadius:4,borderSkipped:false},
+      {label:'Landfilled',data:mKeys.map(k=>+(mLand[k]||0).toFixed(1)),backgroundColor:'rgba(249,115,22,0.65)',borderRadius:4,borderSkipped:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:10,padding:8}}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:10}}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:10}}}}}});
+}
+
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+// ── Reports ───────────────────────────────────────────────────────────────────
+function renderReports(){
+  if(!S.orgData){document.getElementById('report-lock').style.display='flex';return;}
+  document.getElementById('report-lock').style.display='none';
+  const e=S.entries;
+  const co2=e.reduce((s,i)=>s+Number(i.co2||0),0);
+  const water=e.reduce((s,i)=>s+Number(i.water||0),0);
+  const trees=e.reduce((s,i)=>s+Number(i.trees||0),0);
+  document.getElementById('snap-org').textContent=S.orgData.name;
+  document.getElementById('snap-yr').textContent='Reporting Year '+S.orgData.year;
+  document.getElementById('snap-co2').textContent=co2.toFixed(2);
+  document.getElementById('snap-water').textContent=water.toFixed(0);
+  document.getElementById('snap-trees').textContent=trees.toFixed(2);
+  S.pdfData={co2:co2.toFixed(2),water:water.toFixed(0),trees:trees.toFixed(2),entries:e,org:S.orgData};
+}
+
+window.generateSnapshot=async function(){
+  if(!S.entries.length){alert('Add at least 1 entry before generating.');return;}
+  if(!S.orgId){alert('No organisation selected.');return;}
+  const btn=document.getElementById('gen-snap-btn');btn.disabled=true;btn.textContent='Generating...';
+  try{
+    await setDoc(doc(db,'organisations',S.orgId,'settings','snapshot'),{locked:true,generatedAt:Timestamp.now(),generatedBy:S.user.email});
+    S.snapshotLocked=true;
+    document.getElementById('entry-lock-banner').style.display='flex';
+    document.getElementById('snap-status-badge').textContent='LOCKED';
+    document.getElementById('snap-status-badge').className='badge badge-rose';
+    document.getElementById('snap-done-msg').style.display='block';
+    btn.style.display='none';
+    document.getElementById('dl-snap-btn').style.display='inline-flex';
+    showToast('✓ Snapshot generated. Year locked.');
+  }catch(e){showToast('✗ Error: '+e.message);btn.disabled=false;btn.textContent='Generate PDF snapshot';}
+};
+
+window.downloadPDF=function(){
+  const d=S.pdfData;if(!d||!d.org){alert('No data. Ensure an organisation is selected.');return;}
+  const{jsPDF}=window.jspdf;
+  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,M=20;
+  pdf.setFillColor(15,23,41);pdf.rect(0,0,W,297,'F');
+  pdf.setFillColor(245,158,11);pdf.rect(0,0,5,297,'F');
+  pdf.setTextColor(245,158,11);pdf.setFontSize(8);pdf.setFont('helvetica','bold');
+  pdf.text('YUJIR PLANET COMPETENCIES',W/2,20,{align:'center'});
+  pdf.setTextColor(255,255,255);pdf.setFontSize(24);
+  pdf.text('Annual Sustainability Snapshot',W/2,38,{align:'center'});
+  pdf.setDrawColor(245,158,11);pdf.setLineWidth(0.3);pdf.line(M,44,W-M,44);
+  pdf.setTextColor(148,163,184);pdf.setFontSize(11);pdf.setFont('helvetica','normal');
+  pdf.text(d.org.name,W/2,52,{align:'center'});
+  pdf.setFontSize(8);pdf.text('Reporting Year: '+d.org.year,W/2,59,{align:'center'});
+  pdf.text('GHG Protocol + MoEFCC CEF 2023 · IPCC 2019',W/2,65,{align:'center'});
+  const kpis=[{l:'CO2e Avoided',v:d.co2+' kg',c:[245,158,11]},{l:'Water Saved',v:d.water+' L',c:[56,189,248]},{l:'Trees Equiv.',v:d.trees,c:[134,239,172]}];
+  kpis.forEach((k,i)=>{
+    const x=M+(i*(W-2*M)/3)+2,bw=(W-2*M)/3-4;
+    pdf.setFillColor(22,32,64);pdf.roundedRect(x,72,bw,22,3,3,'F');
+    pdf.setDrawColor(...k.c);pdf.setLineWidth(0.3);pdf.roundedRect(x,72,bw,22,3,3,'S');
+    pdf.setTextColor(...k.c);pdf.setFontSize(13);pdf.setFont('helvetica','bold');
+    pdf.text(k.v,x+bw/2,82,{align:'center'});
+    pdf.setTextColor(148,163,184);pdf.setFontSize(7);pdf.setFont('helvetica','normal');
+    pdf.text(k.l,x+bw/2,89,{align:'center'});
+  });
+  pdf.setTextColor(245,158,11);pdf.setFontSize(9);pdf.setFont('helvetica','bold');
+  pdf.text('MATERIAL ENTRY RECORDS',M,103);
+  pdf.setDrawColor(245,158,11);pdf.setLineWidth(0.2);pdf.line(M,105,W-M,105);
+  const hdr=['Consignment','Date','Category','kg','Treatment','CO2e (kg)'];
+  const cw=[30,20,42,14,26,20];
+  let y=111,x2=M;
+  pdf.setFontSize(7);pdf.setFont('helvetica','bold');pdf.setTextColor(100,116,139);
+  hdr.forEach((h,i)=>{pdf.text(h,x2,y);x2+=cw[i];});
+  y+=2;pdf.setDrawColor(40,55,90);pdf.line(M,y,W-M,y);y+=4;
+  pdf.setFont('helvetica','normal');pdf.setTextColor(232,237,233);
+  d.entries.slice(0,30).forEach(e=>{
+    if(y>265){pdf.addPage();pdf.setFillColor(15,23,41);pdf.rect(0,0,W,297,'F');y=20;}
+    x2=M;
+    [e.consignment||'—',e.date,String(e.cat).substring(0,24),String(e.kg),e.treat,(Number(e.factor)<0?'-':'+')+Number(e.co2).toFixed(3)].forEach((v,i)=>{pdf.text(String(v),x2,y);x2+=cw[i];});
+    y+=5;pdf.setDrawColor(25,40,70);pdf.line(M,y-1,W-M,y-1);
+  });
+  const lp=pdf.internal.getCurrentPageInfo().pageNumber;
+  for(let i=1;i<=lp;i++){
+    pdf.setPage(i);pdf.setFillColor(10,18,35);pdf.rect(0,288,W,9,'F');
+    pdf.setTextColor(71,85,105);pdf.setFontSize(7);pdf.setFont('helvetica','normal');
+    pdf.text('YCCP · Yujir Planet Competencies · GHG Protocol + MoEFCC CEF 2023',W/2,294,{align:'center'});
+    pdf.text('Page '+i+' of '+lp,W-M,294,{align:'right'});
+  }
+  pdf.save('YCCP_Snapshot_'+(d.org.name||'org').replace(/\s+/g,'_')+'_'+d.org.year+'.pdf');
+  showToast('✓ PDF downloaded');
+};
+
+window.genVerifierLink=async function(){
+  if(!S.orgId){alert('Select an organisation first.');return;}
+  const token=btoa(S.orgId+'|'+Date.now()+'|30d');
+  S.verifierLink=window.location.origin+window.location.pathname+'?verify='+token+'&org='+encodeURIComponent(S.orgData?.name||'');
+  document.getElementById('verifier-link').textContent=S.verifierLink;
+  await setDoc(doc(db,'organisations',S.orgId,'settings','verifier'),{token,createdAt:Timestamp.now(),createdBy:S.user.email,expiresIn:'30 days'});
+  showToast('✓ Verifier link generated');
+};
+window.copyVerifierLink=function(){
+  const link=document.getElementById('verifier-link').textContent;
+  if(link==='Generate link below'){alert('Generate the link first.');return;}
+  navigator.clipboard.writeText(link).then(()=>showToast('✓ Link copied to clipboard'));
+};
+
+window.exportVerification=function(){
+  const e=S.entries;if(!e.length){alert('No entries to export.');return;}
+  const rows=e.map(i=>[
+    i.consignment||'—',i.date,i.source||'—',i.cat,i.kg,i.treat,
+    i.standard||'GHG Protocol',(Number(i.factor)<0?'-':'+')+Number(i.co2).toFixed(4),
+    Number(i.water).toFixed(2),Number(i.trees).toFixed(4),
+    i.recycler||'—',i.landfillReason||'—',i.landfillEvidence||'—',
+    i.photoURL?'Yes':'No',i.vendor||'—',i.createdBy||'—'
+  ].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const csv=`YCCP Verification Report\nOrganisation: ${S.orgData?.name||'—'}\nReporting Year: ${S.orgData?.year||'—'}\nStandard: GHG Protocol + MoEFCC CEF 2023\nGenerated: ${new Date().toLocaleString('en-IN')}\n\nConsignment,Date,Source,Category,Weight (kg),Treatment,Standard,CO2e (kg),Water (L),Trees,Processor,Landfill Reason,Landfill Evidence,Photo,Vendor,Entered By\n${rows}`;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='YCCP_Verification_'+(S.orgData?.name||'org').replace(/\s+/g,'_')+'_'+today()+'.csv';
+  a.click();showToast('✓ Verification report exported');
+};
+
+window.exportCSV=function(){
+  const e=S.entries;if(!e.length){alert('No entries to export.');return;}
+  const rows=e.map(i=>`"${i.consignment||''}","${i.date}","${i.source||''}","${i.cat}",${i.kg},"${i.treat}",${Number(i.factor)<0?'-':'+'}${Number(i.co2).toFixed(4)},${Number(i.water).toFixed(2)},${Number(i.trees).toFixed(4)},"${i.recycler||''}","${i.vendor||''}"`).join('\n');
+  const csv=`Consignment,Date,Source,Category,Weight (kg),Treatment,CO2e (kg),Water (L),Trees,Processor,Vendor\n${rows}`;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='YCCP_'+(S.orgData?.name||'entries').replace(/\s+/g,'_')+'_'+today()+'.csv';
+  a.click();showToast('✓ CSV exported');
+};
+
+// ── Entries ───────────────────────────────────────────────────────────────────
+function renderEntries(){
+  const e=S.entries;
+  document.getElementById('all-count').textContent=e.length+' records';
+  const tbl=document.getElementById('all-tbl');
+  if(!e.length){tbl.innerHTML='<div class="empty">No entries yet. Add your first material entry above.</div>';return;}
+  tbl.innerHTML='<div class="tbl-wrap"><table><thead><tr><th>Consignment</th><th>Date</th><th>Category</th><th>kg</th><th>Treatment</th><th>CO₂e</th><th>Water</th><th>Photo</th></tr></thead><tbody>'+
+    e.map(i=>`<tr><td style="font-family:monospace;font-size:11px;color:var(--navy)">${i.consignment||'—'}</td>
+      <td>${i.date}</td><td>${i.cat}</td><td>${i.kg}</td>
+      <td><span class="badge ${tBadge(i.treat)}">${i.treat}</span></td>
+      <td style="color:${Number(i.factor)<0?'var(--emerald)':'var(--rose)'};font-weight:500">${Number(i.factor)<0?'−':'+'}${Number(i.co2).toFixed(4)}</td>
+      <td>${Number(i.water).toFixed(1)} L</td>
+      <td>${i.photoURL?`<a href="${i.photoURL}" target="_blank" style="color:var(--indigo);font-size:11px">📷 View</a>`:'—'}</td>
+    </tr>`).join('')+'</tbody></table></div>';
+}
+
+// ── Entry Form ────────────────────────────────────────────────────────────────
+function setTodayDate(){const el=document.getElementById('e-date');if(el)el.value=today();}
+
+window.calcPreview=function(){
+  const cat=document.getElementById('e-cat').value,treat=document.getElementById('e-treat').value;
+  const kg=parseFloat(document.getElementById('e-weight').value);
+  const prev=document.getElementById('calc-prev');
+  if(!cat||!treat||!kg||kg<=0){prev.style.display='none';return;}
+  const r=calcEmission(cat,treat,kg);prev.style.display='block';
+  document.getElementById('p-co2').textContent=(r.factor<0?'−':'+')+r.co2.toFixed(3)+' kg';
+  document.getElementById('p-water').textContent=r.water.toFixed(1)+' L';
+  document.getElementById('p-trees').textContent=r.trees>0?r.trees.toFixed(3)+' trees':'—';
+  document.getElementById('p-std').textContent=r.src;
+};
+
+window.toggleLandfill=function(){
+  const t=document.getElementById('e-treat').value;
+  document.getElementById('landfill-fields').style.display=t==='Landfilled'?'block':'none';
+};
+
+window.handlePhoto=function(input){
+  if(!input.files[0])return;
+  const file=input.files[0];
+  if(file.size>10*1024*1024){showToast('⚠ Photo must be under 10MB');return;}
+  S.photoFile=file;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const p=document.getElementById('photo-prev');
+    p.src=ev.target.result;p.style.display='block';
+    if(!CLOUDINARY_CONFIGURED){
+      showToast('⚠ Cloudinary not configured — photo preview only, will not upload');
     } else {
-      document.getElementById('login-error').style.display = 'block';
+      showToast('📷 Photo selected · '+Math.round(file.size/1024)+' KB · Will upload on save');
     }
   };
+  reader.readAsDataURL(file);
+};
 
-  window.doLogout = function () {
-    if (unsubscribe) unsubscribe();
-    currentUser = null; allEntries = [];
-    document.getElementById('app-screen').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('username').value = '';
-    document.getElementById('password').value = '';
-  };
-
-  document.getElementById('password').addEventListener('keydown', e => {
-    if (e.key === 'Enter') window.doLogin();
-  });
-
-  // ── Live Sync from Firestore ──────────────────────
-  function startLiveSync() {
-    const q = query(collection(db, 'entries'), orderBy('date', 'desc'));
-    unsubscribe = onSnapshot(q,
-      snapshot => {
-        allEntries = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        setDbStatus(true);
-        refreshDashboard();
-        refreshLedger();
-      },
-      err => { console.error(err); setDbStatus(false); }
-    );
+window.saveEntry=async function(){
+  if(S.snapshotLocked){alert('Reporting year is locked. No new entries permitted.');return;}
+  if(!S.orgId){alert('No organisation selected. Please contact admin.');return;}
+  const cat=document.getElementById('e-cat').value,treat=document.getElementById('e-treat').value;
+  const kg=parseFloat(document.getElementById('e-weight').value),date=document.getElementById('e-date').value;
+  const source=document.getElementById('e-source').value;
+  if(!cat||!treat||!kg||kg<=0||!date||!source){alert('Please fill: category, source, treatment, weight and date.');return;}
+  if(treat==='Landfilled'&&!document.getElementById('e-lf-reason').value.trim()){alert('Landfill disposal requires a mandatory reason for BRSR compliance.');return;}
+  const r=calcEmission(cat,treat,kg),cons=genCons();
+  const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Saving...';
+  let photoURL=null;
+  if(S.photoFile){
+    if(!CLOUDINARY_CONFIGURED){
+      showToast('⚠ Cloudinary not configured — saving without photo. Set CLOUDINARY_CLOUD in source.');
+    } else {
+      btn.textContent='Uploading photo...';
+      try{
+        photoURL=await uploadToCloudinary(S.photoFile);
+        showToast('📷 Photo uploaded');
+      }catch(photoErr){
+        console.error('Photo upload failed:',photoErr);
+        showToast('⚠ Photo upload failed — saving entry without photo');
+      }
+      btn.textContent='Saving entry...';
+    }
   }
-
-  function setDbStatus(online) {
-    document.getElementById('db-dot').className = 'db-dot' + (online ? '' : ' offline');
-    document.getElementById('db-label').textContent = online ? 'Live' : 'Offline';
-  }
-
-  // ── Filter ────────────────────────────────────────
-  window.setFilter = function (f, btn) {
-    currentFilter = f;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    refreshDashboard();
-  };
-
-  function filterEntries() {
-    const today = new Date().toISOString().split('T')[0];
-    return allEntries.filter(e => {
-      if (currentFilter === 'dtd') return e.date === today;
-      if (currentFilter === 'mtd') return e.date.startsWith(today.slice(0,7));
-      if (currentFilter === 'ytd') return e.date.startsWith(today.slice(0,4));
-      return true;
+  try{
+    await addDoc(collection(db,'organisations',S.orgId,'entries'),{
+      consignment:cons,source,cat,treat,kg,date,
+      co2:r.co2,water:r.water,trees:r.trees,factor:r.factor,standard:r.src,
+      vendor:document.getElementById('e-vendor').value,
+      recycler:document.getElementById('e-recycler').value,
+      landfillReason:document.getElementById('e-lf-reason')?.value||'',
+      landfillEvidence:document.getElementById('e-lf-evidence')?.value||'',
+      photoURL,hasPhoto:!!photoURL,
+      createdAt:Timestamp.now(),createdBy:S.user.email
     });
+    showToast('✓ '+cons+' saved'+(photoURL?' · 📷 photo attached':'')+' · '+r.co2.toFixed(3)+' kg CO₂e');
+    clearEntry();
+  }catch(e){showToast('✗ Save failed: '+e.message);console.error(e);}
+  finally{btn.disabled=false;btn.textContent='Save entry';}
+};
+
+window.clearEntry=function(){
+  ['e-source','e-cat','e-treat','e-vendor','e-recycler'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['e-weight','e-lf-reason','e-lf-evidence'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('calc-prev').style.display='none';
+  document.getElementById('landfill-fields').style.display='none';
+  document.getElementById('photo-prev').style.display='none';
+  const pi=document.getElementById('photo-input');if(pi)pi.value='';
+  S.photoFile=null;
+  const sb=document.getElementById('save-btn');if(sb){sb.disabled=false;sb.textContent='Save entry';}
+  setTodayDate();
+};
+
+// ── Clients ───────────────────────────────────────────────────────────────────
+window.openClientModal=function(editId){
+  S.editClientId=editId||null;
+  document.getElementById('modal-client-title').textContent=editId?'Edit account':'Add new account';
+  document.getElementById('modal-create-note').style.display=editId?'none':'flex';
+  document.getElementById('reset-pass-btn').style.display=editId?'inline-flex':'none';
+  document.getElementById('c-edit-id').value=editId||'';
+  if(!editId){
+    ['c-name','c-cin','c-email','c-pass','c-contact','c-phone','c-addr','c-city','c-pin','c-students'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  } else {
+    const org=S.allOrgs.find(o=>o.id===editId);
+    if(org){
+      const map={name:'c-name',cin:'c-cin',email:'c-email',contact:'c-contact',phone:'c-phone',addr:'c-addr',city:'c-city',pin:'c-pin',students:'c-students'};
+      Object.entries(map).forEach(([k,id])=>{const el=document.getElementById(id);if(el)el.value=org[k]||'';});
+      const selMap={type:'c-type',year:'c-year',state:'c-state',seg:'c-seg'};
+      Object.entries(selMap).forEach(([k,id])=>{const el=document.getElementById(id);if(el&&org[k])el.value=org[k];});
+    }
   }
+  openModal('modal-client');
+};
 
-  // ── Dashboard ─────────────────────────────────────
-  function refreshDashboard() {
-    const f = filterEntries();
-    const kg = f.reduce((s,e) => s + Number(e.kg), 0);
-    const books = f.reduce((s,e) => s + Number(e.books), 0);
-    const pending = f.filter(e => e.status === 'Pending').reduce((s,e) => s + Number(e.books), 0);
-    document.getElementById('stat-kg').textContent = kg % 1 === 0 ? kg : kg.toFixed(1);
-    document.getElementById('stat-entries').textContent = f.length;
-    document.getElementById('stat-books').textContent = books;
-    document.getElementById('stat-pending').textContent = pending;
-
-    const body = document.getElementById('dash-table-body');
-    const recent = f.slice(0, 5);
-    if (!recent.length) { body.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No entries for this period</p></div>`; return; }
-    body.innerHTML = `<div style="overflow-x:auto"><table><thead><tr><th>Date</th><th>Source</th><th>Name</th><th>Qty (kg)</th><th>Notebooks</th><th>Status</th></tr></thead><tbody>
-      ${recent.map(e=>`<tr>
-        <td>${fmt(e.date)}</td>
-        <td><span class="source-tag">${e.source}</span></td>
-        <td>${e.name}</td><td><strong>${e.kg}</strong></td>
-        <td>📓 ${e.books}</td>
-        <td><span class="badge ${e.status==='Given'?'badge-given':'badge-pending'}">${e.status==='Given'?'✅':'⏳'} ${e.status}</span></td>
-      </tr>`).join('')}
-    </tbody></table></div>`;
-  }
-
-  // ── Ledger ────────────────────────────────────────
-  function refreshLedger() {
-    document.getElementById('ledger-count').textContent = `${allEntries.length} Total Entr${allEntries.length===1?'y':'ies'}`;
-    const body = document.getElementById('ledger-table-body');
-    if (!allEntries.length) { body.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>No entries yet — add one from New Entry</p></div>`; return; }
-    body.innerHTML = `<div style="overflow-x:auto"><table><thead><tr><th>Date</th><th>Source</th><th>Name</th><th>Qty (kg)</th><th>Rule</th><th>Notebooks</th><th>Status</th><th>Action</th></tr></thead><tbody>
-      ${allEntries.map(e=>`<tr>
-        <td>${fmt(e.date)}</td>
-        <td><span class="source-tag">${e.source}</span></td>
-        <td>${e.name}</td><td>${e.kg}</td>
-        <td style="font-size:12px;color:var(--ink-soft)">${e.rule}kg/book</td>
-        <td>📓 ${e.books}</td>
-        <td><span class="badge ${e.status==='Given'?'badge-given':'badge-pending'}">${e.status==='Given'?'✅':'⏳'} ${e.status}</span></td>
-        <td><button class="btn-toggle" onclick="toggleStatus('${e.id}','${e.status}')">${e.status==='Given'?'Mark Pending':'Mark Given'}</button></td>
-      </tr>`).join('')}
-    </tbody></table></div>`;
-  }
-
-  window.toggleStatus = async function (id, current) {
-    const next = current === 'Given' ? 'Pending' : 'Given';
-    try {
-      await updateDoc(doc(db, 'entries', id), { status: next });
-      showToast(`📓 Marked as ${next}`);
-    } catch (e) { showToast('❌ Update failed'); console.error(e); }
-  };
-
-  // ── Form ──────────────────────────────────────────
-  function setTodayDate() {
-    const el = document.getElementById('f-date');
-    if (el) el.value = new Date().toISOString().split('T')[0];
-  }
-
-  window.calcBooks = function () {
-    const kg = parseFloat(document.getElementById('f-kg').value);
-    const rule = parseFloat(document.getElementById('f-quality').value);
-    const el = document.getElementById('calc-books');
-    const desc = document.getElementById('calc-desc');
-    if (!kg || kg <= 0) { el.textContent = '—'; desc.textContent = 'Enter quantity above to calculate'; return; }
-    const b = Math.floor(kg / rule);
-    el.textContent = b;
-    desc.textContent = `${kg} kg ÷ ${rule} kg/book = ${b} notebook${b!==1?'s':''}`;
-  };
-
-  window.submitEntry = async function () {
-    const source = document.getElementById('f-source').value;
-    const name = document.getElementById('f-name').value.trim();
-    const kg = parseFloat(document.getElementById('f-kg').value);
-    const rule = parseFloat(document.getElementById('f-quality').value);
-    const date = document.getElementById('f-date').value;
-    if (!source || !name || !kg || kg <= 0 || !date) { alert('Please fill in all fields.'); return; }
-    const books = Math.floor(kg / rule);
-    const btn = document.getElementById('save-btn');
-    btn.disabled = true; btn.textContent = 'Saving...';
-    try {
-      await addDoc(collection(db, 'entries'), {
-        source, name, kg, rule, books, date, status: 'Pending',
-        createdAt: Timestamp.now(), createdBy: currentUser
+window.saveClient=async function(){
+  const name=document.getElementById('c-name').value.trim(),email=document.getElementById('c-email').value.trim();
+  const pass=document.getElementById('c-pass').value,editId=document.getElementById('c-edit-id').value;
+  const city=document.getElementById('c-city').value.trim(),state=document.getElementById('c-state').value;
+  if(!name||!email){alert('Name and email are required.');return;}
+  if(!editId&&!pass){alert('A temporary password is required for new accounts.');return;}
+  if(!editId&&pass.length<6){alert('Password must be at least 6 characters.');return;}
+  const btn=document.getElementById('save-client-btn');btn.disabled=true;btn.textContent='Saving...';
+  try{
+    const getData=id=>document.getElementById(id)?.value||'';
+    const orgData={
+      name,email,type:getData('c-type'),year:getData('c-year'),cin:getData('c-cin'),
+      contact:getData('c-contact'),phone:getData('c-phone'),
+      addr:getData('c-addr'),city,state,pin:getData('c-pin'),
+      seg:getData('c-seg'),students:getData('c-students'),
+      status:'ACTIVE',updatedAt:Timestamp.now()
+    };
+    if(editId){
+      await updateDoc(doc(db,'organisations',editId),orgData);
+      const idx=S.allOrgs.findIndex(o=>o.id===editId);
+      if(idx>=0)S.allOrgs[idx]={...S.allOrgs[idx],...orgData};
+      showToast('✓ Account updated: '+name);
+    } else {
+      const res=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_KEY}`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email,password:pass,returnSecureToken:false})
       });
-      showToast(`✅ Saved! ${books} notebook${books!==1?'s':''} allocated.`);
-      resetForm();
-    } catch (e) { showToast('❌ Save failed. Check connection.'); console.error(e); }
-    finally { btn.disabled = false; btn.textContent = 'Save Entry'; }
-  };
+      const data=await res.json();
+      if(data.error)throw new Error(data.error.message);
+      orgData.createdAt=Timestamp.now();orgData.createdBy=S.user.email;
+      const ref=await addDoc(collection(db,'organisations'),orgData);
+      S.allOrgs.push({id:ref.id,...orgData});
+      showToast('✓ Account created for '+name+' · Login: '+email);
+    }
+    renderClients();renderOrgSwitcher();renderOvOrgFilter();closeModal('modal-client');
+  }catch(e){showToast('✗ Error: '+e.message);console.error(e);}
+  finally{btn.disabled=false;btn.textContent='Save account';}
+};
 
-  window.resetForm = function () {
-    ['f-source','f-name','f-kg'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('f-quality').value = '2';
-    setTodayDate();
-    document.getElementById('calc-books').textContent = '—';
-    document.getElementById('calc-desc').textContent = 'Enter quantity above to calculate';
-  };
+window.resetPassword=async function(){
+  const email=document.getElementById('c-email').value.trim();
+  if(!email){alert('Email is required.');return;}
+  try{await sendPasswordResetEmail(auth,email);showToast('✓ Password reset email sent to '+email);}
+  catch(e){showToast('✗ Could not send reset email: '+e.message);}
+};
 
-  window.showPage = function (id, btn) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('page-' + id).classList.add('active');
-    btn.classList.add('active');
-  };
+function renderClients(){
+  const tbl=document.getElementById('clients-tbl');
+  if(!S.allOrgs.length){tbl.innerHTML='<div class="empty">No accounts yet.</div>';return;}
+  tbl.innerHTML='<div class="tbl-wrap"><table><thead><tr><th>Organisation</th><th>Type</th><th>City</th><th>State</th><th>Year</th><th>Entries</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
+    S.allOrgs.map(o=>`<tr>
+      <td><div style="font-weight:600">${o.name}</div><div style="font-size:11px;color:var(--ink3)">${o.email}</div></td>
+      <td style="font-size:12px">${o.type||'—'}</td>
+      <td style="font-size:12px">${o.city||'—'}</td>
+      <td style="font-size:12px">${o.state||'—'}</td>
+      <td>${o.year||'—'}</td>
+      <td>${(S.allEntries[o.id]||[]).length}</td>
+      <td><span class="badge badge-teal">Active</span></td>
+      <td><div style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="btn btn-xs" onclick="openClientModal('${o.id}')">Edit</button>
+        <button class="btn btn-xs btn-ghost" onclick="viewOrgData('${o.id}')">View</button>
+        <button class="btn btn-xs btn-rose" onclick="unlockOrgYear('${o.id}')">Unlock</button>
+      </div></td>
+    </tr>`).join('')+'</tbody></table></div>';
+}
 
-  function fmt(d) {
-    if (!d) return '—';
-    const [y,m,day] = d.split('-');
-    return `${parseInt(day)} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1]} ${y}`;
+window.viewOrgData=function(id){document.getElementById('org-select').value=id;window.switchOrg();nav('dashboard',document.querySelector('.nav-item[onclick*=dashboard]'));};
+window.unlockOrgYear=async function(id){
+  if(!confirm('Unlock the reporting year for this organisation?'))return;
+  await setDoc(doc(db,'organisations',id,'settings','snapshot'),{locked:false,unlockedAt:Timestamp.now(),unlockedBy:S.user.email});
+  if(S.orgId===id)startSync(id);showToast('✓ Reporting year unlocked');renderClients();
+};
+
+// ── Recyclers ─────────────────────────────────────────────────────────────────
+async function loadRecyclers(){
+  const snap=await getDocs(collection(db,'recyclers'));
+  S.recyclers=snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderRecyclers();updateRecyclerSelect();
+}
+function updateRecyclerSelect(){
+  const sel=document.getElementById('e-recycler');if(!sel)return;
+  sel.innerHTML='<option value="">Select processor (optional)...</option>'+
+    S.recyclers.map(r=>`<option value="${r.id}">${r.name} (${r.type||'—'})</option>`).join('');
+}
+window.openRecyclerModal=function(){openModal('modal-recycler');};
+window.saveRecycler=async function(){
+  const name=document.getElementById('r-name').value.trim(),type=document.getElementById('r-type').value;
+  if(!name||!type){alert('Name and type required.');return;}
+  try{
+    const ref=await addDoc(collection(db,'recyclers'),{
+      name,type,email:document.getElementById('r-email').value,
+      city:document.getElementById('r-city').value,
+      materials:document.getElementById('r-materials').value,cert:document.getElementById('r-cert').value,
+      createdAt:Timestamp.now()
+    });
+    S.recyclers.push({id:ref.id,name,type});
+    renderRecyclers();updateRecyclerSelect();closeModal('modal-recycler');
+    showToast('✓ Processor registered: '+name);
+  }catch(e){showToast('✗ Error: '+e.message);}
+};
+function renderRecyclers(){
+  const tbl=document.getElementById('recyclers-tbl');
+  if(!S.recyclers.length){tbl.innerHTML='<div class="empty">No processors registered yet.</div>';return;}
+  tbl.innerHTML='<div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Type</th><th>City</th><th>Materials</th><th>Cert no.</th></tr></thead><tbody>'+
+    S.recyclers.map(r=>`<tr><td><div style="font-weight:600">${r.name}</div><div style="font-size:11px;color:var(--ink3)">${r.email||''}</div></td>
+      <td><span class="badge badge-sky">${r.type||'—'}</span></td>
+      <td style="font-size:12px">${r.city||'—'}</td>
+      <td style="font-size:11px;color:var(--ink3)">${r.materials||'—'}</td>
+      <td style="font-size:11px">${r.cert||'—'}</td></tr>`).join('')+'</tbody></table></div>';
+}
+
+// ── Emission Factors ──────────────────────────────────────────────────────────
+async function loadEFOverrides(){
+  const d=await getDoc(doc(db,'settings','emissionFactors'));
+  if(d.exists()&&d.data().factors){try{EF=JSON.parse(d.data().factors);renderFactors();}catch(e){}}
+}
+function renderFactors(){
+  const treats=['Recycled','Composted','Landfilled','Incinerated','Co-processed'];
+  document.getElementById('factors-body').innerHTML=Object.keys(EF).map(cat=>{
+    const f=EF[cat];
+    return`<tr><td style="font-weight:600;font-size:12px">${cat}</td>`+
+      treats.map(t=>{const v=f[t];if(v===null||v===undefined)return`<td class="ef-na">—</td>`;
+        const cls=v<0?'ef-neg':'ef-pos';
+        const editable=S.isMaster?`class="${cls} ef-editable" onclick="openEF('${cat}','${t}',${v})" title="Click to edit"`:`class="${cls}"`;
+        return`<td><span ${editable}>${v>0?'+':''}${v}</span></td>`;}).join('')+
+      `<td style="font-size:10px;color:var(--ink3)">${f.src}</td></tr>`;
+  }).join('');
+}
+window.openEF=function(cat,treat,current){
+  if(!S.isMaster)return;
+  document.getElementById('ef-lbl').textContent=cat+' — '+treat;
+  document.getElementById('ef-val').value=current;
+  document.getElementById('ef-cat').value=cat;
+  document.getElementById('ef-treat').value=treat;
+  openModal('modal-ef');
+};
+window.saveEF=async function(){
+  const cat=document.getElementById('ef-cat').value,treat=document.getElementById('ef-treat').value;
+  const val=parseFloat(document.getElementById('ef-val').value);
+  if(isNaN(val)){alert('Enter a valid number.');return;}
+  EF[cat][treat]=val;
+  await setDoc(doc(db,'settings','emissionFactors'),{factors:JSON.stringify(EF),updatedAt:Timestamp.now(),updatedBy:S.user.email});
+  renderFactors();closeModal('modal-ef');
+  showToast('✓ Factor updated: '+cat+' / '+treat+' = '+val);
+};
+
+// ── Nav ───────────────────────────────────────────────────────────────────────
+window.nav=function(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const page=document.getElementById('p-'+id);
+  if(page)page.classList.add('active');
+  if(el)el.classList.add('active');
+  if(id==='reports')renderReports();
+  if(id==='overview')renderOverview();
+  if(id==='clients')renderClients();
+  if(id==='recyclers')renderRecyclers();
+  if(id==='dashboard')renderDashboard();
+};
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+window.openModal=function(id){document.getElementById(id).classList.add('show');};
+window.closeModal=function(id){document.getElementById(id).classList.remove('show');};
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show');});
+});
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function tBadge(t){
+  if(['Recycled','Composted','Co-processed'].includes(t))return'badge-teal';
+  if(t==='Landfilled')return'badge-rose';
+  return'badge-amber';
+}
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);
+}
+</script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+<script>
+/* ✅ YOUR FIREBASE CONFIG — REPLACE WITH YOURS */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  appId: "YOUR_APP_ID"
+};
+
+/* ✅ INIT */
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+/* ✅ LOGIN FUNCTION (FIXED) */
+async function doLogin() {
+  const email = document.getElementById("l-email").value.trim();
+  const password = document.getElementById("l-pass").value.trim();
+  const errBox = document.getElementById("login-err");
+
+  errBox.style.display = "none";
+
+  try {
+    document.getElementById("login-btn").disabled = true;
+
+    await auth.signInWithEmailAndPassword(email, password);
+
+    // SUCCESS → show app
+    document.getElementById("login").classList.remove("show");
+    document.getElementById("app").classList.add("show");
+
+  } catch (error) {
+    errBox.innerText = error.message;
+    errBox.style.display = "block";
+  } finally {
+    document.getElementById("login-btn").disabled = false;
   }
+}
 
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg; t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
+/* ✅ SESSION HANDLING (AUTO LOGIN) */
+auth.onAuthStateChanged((user) => {
+  document.getElementById("loading").style.display = "none";
+
+  if (user) {
+    document.getElementById("login").classList.remove("show");
+    document.getElementById("app").classList.add("show");
+  } else {
+    document.getElementById("login").classList.add("show");
+    document.getElementById("app").classList.remove("show");
   }
+});
+
+/* ✅ LOGOUT */
+function logout() {
+  auth.signOut();
+}
 </script>
 </body>
 </html>
